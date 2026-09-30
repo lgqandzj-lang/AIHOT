@@ -1,6 +1,8 @@
 import { XMLParser } from 'fast-xml-parser';
 import { ResearchValidationError } from './contracts.ts';
 import { normalizeDoi } from './normalize.ts';
+import { pubmedAbstractSections, renderAbstractSections } from './abstract-text.ts';
+import type { AbstractSection } from './abstract-text.ts';
 
 export type MetadataProvider = 'crossref' | 'pubmed';
 export interface LiteratureMetadata {
@@ -19,6 +21,7 @@ export interface LiteratureMetadata {
   abstractFormat: 'plain' | 'jats' | null;
   abstractLocator: string | null;
   versionLabel: string | null;
+  abstractSections?: AbstractSection[];
 }
 export interface MetadataFetchOptions {
   fetcher?: typeof fetch;
@@ -130,12 +133,28 @@ export function normalizeMetadata(input: LiteratureMetadata): LiteratureMetadata
   if (abstract && input.abstractFormat !== 'plain' && input.abstractFormat !== 'jats') {
     throw new ResearchValidationError('Abstract format is required for an abstract.');
   }
+  let sections: AbstractSection[] | undefined;
+  if (input.abstractSections !== undefined) {
+    if (!abstract || input.abstractFormat !== 'plain' || !Array.isArray(input.abstractSections)
+      || input.abstractSections.length < 1 || input.abstractSections.length > 200) {
+      throw new ResearchValidationError('Invalid source abstract sections.');
+    }
+    sections = input.abstractSections.map(section => {
+      if (!section || typeof section !== 'object' || Array.isArray(section)) throw new ResearchValidationError('Invalid source abstract section.');
+      const text = clean(section.text, 100_000);
+      const label = section.label == null ? null : clean(section.label, 200);
+      if (!text || (section.label != null && !label)) throw new ResearchValidationError('Invalid source abstract section.');
+      return { label, text };
+    });
+    if (renderAbstractSections(sections) !== abstract) throw new ResearchValidationError('Abstract sections do not match stored abstract.');
+  }
   return {
     provider: input.provider, providerId, sourceUrl: sourceUrl.href, acquiredAt: acquired.toISOString(),
     doi, pmid, title, authors: input.authors.map(author => author.trim()), journal,
     publishedYear: input.publishedYear ?? null, publishedOn: input.publishedOn ?? null,
     abstract, abstractFormat: abstract ? input.abstractFormat : null,
     abstractLocator: abstract ? abstractLocator : null, versionLabel,
+    ...(sections ? { abstractSections: sections } : {}),
   };
 }
 
@@ -205,13 +224,8 @@ export async function fetchPubmedMetadata(pmidInput: string, options: MetadataFe
     const x = obj(author);
     return [xmlText(x.ForeName), xmlText(x.LastName)].filter(Boolean).join(' ') || xmlText(x.CollectiveName);
   }).filter(Boolean);
-  const abstractParts = array(obj(article.Abstract).AbstractText).map(part => {
-    const x = obj(part);
-    const body = xmlText(part);
-    const label = clean(x['@_Label'], 100);
-    return body ? (label ? label + ': ' + body : body) : '';
-  }).filter(Boolean);
-  const abstract = abstractParts.length ? abstractParts.join('\n') : null;
+  const abstractSections = pubmedAbstractSections(xml);
+  const abstract = abstractSections.length ? renderAbstractSections(abstractSections) : null;
   const published = pubmedDate(article);
   const revised = obj(citation.DateRevised);
   const revisedDate = dateParts(xmlText(revised.Year), xmlText(revised.Month), xmlText(revised.Day)).date;
@@ -225,5 +239,6 @@ export async function fetchPubmedMetadata(pmidInput: string, options: MetadataFe
     abstract, abstractFormat: abstract ? 'plain' : null,
     abstractLocator: abstract ? 'PubMed:Article.Abstract' : null,
     versionLabel: revisedDate,
+    ...(abstract ? { abstractSections } : {}),
   });
 }
