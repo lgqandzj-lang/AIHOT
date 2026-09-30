@@ -3,7 +3,7 @@
 // environment variable or the admin's model page picks one of the named presets below.
 import type { z } from "zod";
 import { config, credential } from "../config.ts";
-import { sha256 } from "../lib/ids.ts";
+import { sha256, stableJson } from "../lib/ids.ts";
 import { completeReceipt, paidRequest, ProviderRejectedError, rejectReceivedResponse } from "./receipts.ts";
 import { sql } from "../db.ts";
 
@@ -99,6 +99,10 @@ export interface ChatJsonOptions<S extends z.ZodType> {
   /** false: the model answers in its own text format (no JSON mode); `parse` turns it into the schema's input. */
   json?: boolean;
   parse?: (content: string) => unknown;
+  /** Explicit one-request trials cannot be retried or released by recovery. */
+  retryPolicy?: "existing" | "never";
+  /** Bind a preflight and monetary reservation to the final body and endpoint. */
+  approvedRequest?: { bodyHash: string; baseUrl: string };
 }
 
 export interface ChatJsonResult<T> {
@@ -157,6 +161,29 @@ function isConnectFailure(error: unknown): boolean {
   return ["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "UND_ERR_CONNECT_TIMEOUT", "ECONNRESET_BEFORE_SEND", "CERT_HAS_EXPIRED"].includes(code ?? "");
 }
 
+/** No API key is returned. Includes preset extras after their final overrides. */
+export function prepareChatJsonRequest<S extends z.ZodType>(opts: ChatJsonOptions<S>) {
+  const spec = MODELS[opts.model];
+  if (!spec) throw new Error(`Unknown model ${opts.model}`);
+  const temperature = opts.temperature ?? 0.2;
+  const maxTokens = Math.max(opts.maxTokens ?? 1500, 512) + (spec.key.endsWith("-think") ? 4000 : 0);
+  const userText = typeof opts.user === "string" ? opts.user : JSON.stringify(opts.user);
+  const body = JSON.parse(JSON.stringify({
+    model: spec.model,
+    messages: [
+      ...(opts.system ? [{ role: "system", content: opts.system }] : []),
+      { role: "user", content: typeof opts.user === "string" || Array.isArray(opts.user) ? opts.user : userText },
+    ],
+    temperature,
+    max_tokens: maxTokens,
+    ...(spec.jsonMode && opts.json !== false ? { response_format: { type: "json_object" } } : {}),
+    ...(spec.extra ?? {}),
+  })) as Record<string, unknown>;
+  return { body, bodyHash: sha256(stableJson(body)), userText, temperature, maxTokens,
+    service: spec.service, modelKey: spec.key, modelName: body.model,
+    baseUrl: credential("models", spec.baseUrlEnv)?.replace(/\/$/, "") ?? null };
+}
+
 export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): Promise<ChatJsonResult<z.infer<S>>> {
   const spec = MODELS[opts.model];
   if (!spec) throw new Error(`Unknown model ${opts.model}`);
@@ -165,32 +192,24 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
   const apiKey = credential("models", spec.apiKeyEnv);
   if (!baseUrl || !apiKey || !spec.model) throw new Error(`Model ${opts.model} is not configured (${spec.baseUrlEnv}, ${spec.apiKeyEnv}${spec.key === "default" ? ", LLM_MODEL" : ""})`);
 
-  const temperature = opts.temperature ?? 0.2;
-  const maxTokens = Math.max(opts.maxTokens ?? 1500, 512) + (spec.key.endsWith("-think") ? 4000 : 0);
-  const userText = typeof opts.user === "string" ? opts.user : JSON.stringify(opts.user);
-  const body: Record<string, unknown> = {
-    model: spec.model,
-    messages: [
-      // A prompt given as one user message (the title/summary prompts) has no system message.
-      ...(opts.system ? [{ role: "system", content: opts.system }] : []),
-      // Multimodal parts go through as parts; plain objects are sent as JSON text.
-      { role: "user", content: typeof opts.user === "string" || Array.isArray(opts.user) ? opts.user : userText },
-    ],
-    temperature,
-    max_tokens: maxTokens,
-    ...(spec.jsonMode && opts.json !== false ? { response_format: { type: "json_object" } } : {}),
-    ...(spec.extra ?? {}),
-  };
+  const { body, bodyHash, userText, temperature, maxTokens } = prepareChatJsonRequest(opts);
+  if (opts.approvedRequest && (opts.approvedRequest.bodyHash !== bodyHash
+    || opts.approvedRequest.baseUrl !== baseUrl.replace(/\/$/, ""))) {
+    throw new Error("Final model request differs from the approved preflight");
+  }
 
   const receipt = await paidRequest(
     {
       service: spec.service,
-      model: spec.model,
+      model: opts.approvedRequest ? body.model as string : spec.model,
       purpose: opts.purpose,
       subject: opts.subject,
-      identity: { model: spec.model, promptVersion: opts.promptVersion, system: sha256(opts.system), user: sha256(userText), temperature, maxTokens, extra: spec.extra ?? null },
-      requestSummary: { promptVersion: opts.promptVersion, systemHash: sha256(opts.system), userHash: sha256(userText), userChars: userText.length, temperature, maxTokens },
+      identity: { model: spec.model, promptVersion: opts.promptVersion, system: sha256(opts.system), user: sha256(userText), temperature, maxTokens, extra: spec.extra ?? null,
+        ...(opts.approvedRequest ? { finalBodyHash: bodyHash, endpointHash: sha256(baseUrl) } : {}) },
+      requestSummary: { promptVersion: opts.promptVersion, systemHash: sha256(opts.system), userHash: sha256(userText), userChars: userText.length,
+        temperature: body.temperature, maxTokens: body.max_tokens, bodyHash },
       attemptTag: opts.attemptTag,
+      retryPolicy: opts.retryPolicy,
     },
     async () => {
       const started = Date.now();
@@ -201,6 +220,7 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
           headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
           body: JSON.stringify(body),
           signal: AbortSignal.timeout(opts.timeoutMs ?? 120_000),
+          ...(opts.retryPolicy === "never" ? { redirect: "error" as const } : {}),
         });
       } catch (error) {
         if (isConnectFailure(error)) throw new ProviderRejectedError(`connect failed: ${String(error)}`, null, true);

@@ -91,7 +91,7 @@ const ARTICLE_STEPS = new Set([
  */
 async function release(id: number, error: string, actor: string, note: string, billed: boolean | null) {
   const [before] = await sql<{ subject: string | null; purpose: string }[]>`
-    UPDATE receipts SET status = 'failed', error = ${error}, updated_at = now() WHERE id = ${id} AND status = 'unknown' RETURNING subject, purpose`;
+    UPDATE receipts SET status = 'failed', error = ${error}, updated_at = now() WHERE id = ${id} AND status = 'unknown' AND retry_policy = 'existing' RETURNING subject, purpose`;
   if (!before) return null;
   await sql`UPDATE receipt_attempts SET status = 'failed', error = ${error} WHERE receipt_id = ${id} AND status = 'unknown'`;
   const article = ARTICLE_STEPS.has(before.purpose) ? /^article:([^@:#]+)/.exec(before.subject ?? "")?.[1] : undefined;
@@ -108,9 +108,10 @@ async function release(id: number, error: string, actor: string, note: string, b
 /** Admin, after checking the provider's console: records whether it was billed and releases it. */
 export async function releaseReceipt(id: number, input: { billed: boolean; note: string }, actor: string) {
   if (!input.note?.trim()) throw new Error("note is required");
-  const [row] = await sql<{ status: string }[]>`SELECT status FROM receipts WHERE id = ${id}`;
+  const [row] = await sql<{ status: string; retry_policy: string }[]>`SELECT status, retry_policy FROM receipts WHERE id = ${id}`;
   if (!row) return null;
   if (row.status !== "unknown") throw new Conflict("只有结果未知的回执需要人工核对");
+  if (row.retry_policy === "never") throw new Conflict("单次试跑回执禁止再次发送；须单独核对结果与费用");
   const error = `人工核对：${input.billed ? "供应商已计费但结果未取回" : "供应商未计费"}。${input.note}`;
   return release(id, error, actor, input.note, input.billed);
 }
@@ -126,7 +127,7 @@ const AUTO_RELEASE_NOTE = "自动放行：结果未知超过 30 分钟，未核�
 export async function autoReleaseUnknownReceipts(now = Date.now()) {
   const rows = await sql<{ id: number }[]>`
     SELECT r.id FROM receipts r
-    WHERE r.status = 'unknown' AND r.updated_at < ${new Date(now - AUTO_RELEASE_AFTER_MS)}
+    WHERE r.status = 'unknown' AND r.retry_policy = 'existing' AND r.updated_at < ${new Date(now - AUTO_RELEASE_AFTER_MS)}
       AND NOT EXISTS (SELECT 1 FROM receipt_attempts a WHERE a.receipt_id = r.id AND a.error LIKE ${AUTO_RELEASE_NOTE + "%"})
     ORDER BY r.id LIMIT 200`;
   let released = 0;

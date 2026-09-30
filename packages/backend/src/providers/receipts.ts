@@ -6,6 +6,7 @@
 // 4. A request whose outcome is unknown (timeout after sending, crash mid-flight) is not re-sent by the
 //    caller. ops.recover releases it once after 30 minutes (admin/runs.ts), so a lost answer costs at
 //    most one repeat; after that it waits for the admin.
+//    Explicit one-request trials set retry_policy=never and cannot be released or retried.
 import { sql, type Db } from "../db.ts";
 import { sha256, stableJson } from "../lib/ids.ts";
 
@@ -20,6 +21,7 @@ export class BudgetExceededError extends Error {
 }
 
 export class ReceiptBusyError extends Error {}
+export class ReceiptRetryForbiddenError extends Error {}
 
 export class ReceiptUnknownError extends Error {
   readonly receiptId: number;
@@ -58,6 +60,7 @@ export interface ReceiptRequest {
   requestSummary?: Record<string, unknown>;
   /** Distinguishes an explicit re-run (e.g. admin "re-evaluate") from recovery of the same request. */
   attemptTag?: string;
+  retryPolicy?: "existing" | "never";
 }
 
 export interface ReceiptResult {
@@ -79,6 +82,7 @@ interface ReceiptRow {
   response: unknown;
   created_at: Date;
   updated_at: Date;
+  retry_policy: "existing" | "never";
 }
 
 async function checkBudget(tx: Db, service: string): Promise<void> {
@@ -113,8 +117,12 @@ export async function paidRequest(req: ReceiptRequest, call: () => Promise<CallO
     // Serialise budget checks per service so concurrent workers cannot overshoot.
     await tx`SELECT pg_advisory_xact_lock(hashtext(${"budget:" + req.service}))`;
     const [existing] = await tx<ReceiptRow[]>`
-      SELECT id, status, response, created_at, updated_at FROM receipts WHERE logical_key = ${logicalKey} FOR UPDATE`;
+      SELECT id, status, response, created_at, updated_at, retry_policy FROM receipts WHERE logical_key = ${logicalKey} FOR UPDATE`;
     if (existing) {
+      if (req.retryPolicy === "never" && existing.retry_policy !== "never") {
+        await tx`UPDATE receipts SET retry_policy = 'never' WHERE id = ${existing.id}`;
+        existing.retry_policy = "never";
+      }
       if (existing.status === "received" || existing.status === "completed") return { kind: "reuse" as const, row: existing };
       if (existing.status === "pending") {
         if (Date.now() - existing.updated_at.getTime() < PENDING_STALE_MS) return { kind: "busy" as const, row: existing };
@@ -122,6 +130,9 @@ export async function paidRequest(req: ReceiptRequest, call: () => Promise<CallO
         return { kind: "unknown" as const, row: existing };
       }
       if (existing.status === "unknown") return { kind: "unknown" as const, row: existing };
+      if (existing.retry_policy === "never" || req.retryPolicy === "never") {
+        return { kind: "retry_forbidden" as const, row: existing };
+      }
       // failed: the provider did not take the request, or its answer was unusable; a new attempt is allowed.
       await checkBudget(tx, req.service);
       const [r] = await tx<{ attempts: number }[]>`
@@ -131,9 +142,9 @@ export async function paidRequest(req: ReceiptRequest, call: () => Promise<CallO
     }
     await checkBudget(tx, req.service);
     const [row] = await tx<{ id: number }[]>`
-      INSERT INTO receipts (logical_key, service, model, purpose, subject, status, request, attempts)
+      INSERT INTO receipts (logical_key, service, model, purpose, subject, status, request, attempts, retry_policy)
       VALUES (${logicalKey}, ${req.service}, ${req.model ?? null}, ${req.purpose}, ${req.subject ?? null}, 'pending',
-              ${tx.json((req.requestSummary ?? {}) as never)}, 1)
+              ${tx.json((req.requestSummary ?? {}) as never)}, 1, ${req.retryPolicy ?? "existing"})
       RETURNING id`;
     const attemptId = await startAttempt(tx, row!.id, 1, req);
     return { kind: "call" as const, id: row!.id, attemptId };
@@ -142,8 +153,11 @@ export async function paidRequest(req: ReceiptRequest, call: () => Promise<CallO
   if (claimed.kind === "reuse") return { receiptId: claimed.row.id, response: claimed.row.response, reused: true };
   if (claimed.kind === "busy") throw new ReceiptBusyError(`Receipt ${claimed.row.id} is in flight`);
   if (claimed.kind === "unknown") {
-    throw new ReceiptUnknownError(claimed.row.id, `Receipt ${claimed.row.id} has an unknown outcome; it is released once automatically, then from the admin`);
+    throw new ReceiptUnknownError(claimed.row.id, claimed.row.retry_policy === "never"
+      ? `Receipt ${claimed.row.id} has an unknown outcome; another request is forbidden pending manual reconciliation`
+      : `Receipt ${claimed.row.id} has an unknown outcome; it is released once automatically, then from the admin`);
   }
+  if (claimed.kind === "retry_forbidden") throw new ReceiptRetryForbiddenError(`Receipt ${claimed.row.id} forbids another request`);
 
   const { id: receiptId, attemptId } = claimed;
   const started = Date.now();

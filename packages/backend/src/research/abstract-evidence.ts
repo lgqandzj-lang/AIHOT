@@ -181,6 +181,23 @@ export async function readAbstractFragment(db: Database, bundleId: string, refer
   requireId(bundleId); validateReference(reference);
   return db.transaction(async tx => readInBundle(tx, await loadBundle(tx, bundleId), reference));
 }
+/** Read the persisted provided subset, never a caller-expanded bundle. */
+export async function readAbstractMaterialBundle(db: Database, bundleId: string): Promise<AbstractMaterialBundle> {
+  requireId(bundleId);
+  return db.transaction(async tx => {
+    const stored = await loadBundle(tx, bundleId);
+    const fragments: AbstractFragment[] = [];
+    for (const id of stored.provided_fragment_ids) {
+      const [row] = await query<FragmentRow>(tx, `SELECT ${fragmentColumns} FROM ep_research_abstract_fragments WHERE id=$1::uuid`, [id]);
+      if (!row) throw new ResearchValidationError('Unknown abstract fragment.');
+      fragments.push(await readInBundle(tx, stored, citationForAbstractFragment(fragment(row))));
+    }
+    return { id: stored.id, materialId: stored.material_id, materialHash: stored.material_hash,
+      splitRuleVersion: stored.split_rule_version, state: stored.state, scope: 'abstract', source: stored.source,
+      providedFragmentIds: stored.provided_fragment_ids, fragments, fullTextProvided: false,
+      processingAuthorization: 'not_evaluated', citationValidation: 'identity_only' };
+  });
+}
 export async function validateAbstractCitations(db: Database, bundleId: string, references: AbstractCitation[]) {
   requireId(bundleId);
   if (!Array.isArray(references) || references.length > 200) throw new ResearchValidationError('Invalid citation list.');
