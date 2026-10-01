@@ -25,7 +25,7 @@ function fixture(text = 'Group Cedar enrolled 14 participants. Safety was assess
     productRoles:absent(),sample:{quantity:cite(14),unit:cite('participants'),denominator:cite('participants enrolled in Group Cedar')},
     imagingMethods:absent(),radiationStrategy:absent(),observationTimes:[{time:cite('10 days'),purpose:cite('safety assessment'),
       outcomeDenominator:cite('11 participants with complete safety data')}]}]};
-  return {bundle,prompt:extractionPrompt(bundle,'[SYNTHETIC]'),output,cite};
+  return {bundle,prompt:extractionPrompt(bundle,'[SYNTHETIC]','ep-abstract-extract-v3'),output,cite};
 }
 test('cohort scope and outcome denominator remain separate; faithful brief wording needs no answer-key match',()=>{
   const {output,prompt}=fixture();const result=validateCompactExtraction(output,prompt.input,{finishReason:'stop'});
@@ -88,7 +88,7 @@ test('length stop blocks complete cards even for valid JSON; broken JSON is neve
 });
 test('compact wire contains exact fragment IDs and research fields only; expansion retains immutable private identity',()=>{
   const {output,prompt,bundle}=fixture();const result=validateCompactExtraction(output,prompt.input);
-  assert.deepEqual(JSON.parse(prompt.system.split('JSON_SCHEMA:\n')[1]),extractionResponseSchema());
+  assert.deepEqual(JSON.parse(prompt.system.split('JSON_SCHEMA:\n')[1]),extractionResponseSchema('ep-abstract-extract-v3'));
   assert.ok(!prompt.user.includes('materialHash')&&!prompt.user.includes('materialId')&&!prompt.user.includes('fragmentHash'));
   assert.ok(prompt.user.includes(bundle.fragments[0]!.id));assert.equal(output.groups[0]!.sample.unit.citations[0],bundle.fragments[0]!.id);
   assert.equal(result.output!.groups[0]!.sample.unit.citations[0]!.materialHash,bundle.materialHash);

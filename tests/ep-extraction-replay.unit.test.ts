@@ -23,14 +23,14 @@ function fixture() {
   const bundle:AbstractMaterialBundle={id:randomUUID(),materialId,materialHash,splitRuleVersion:fragment.splitRuleVersion,state:'ready',scope:'abstract',
     source:{provider:'synthetic',providerId:'synthetic',sourceUrl:'https://example.org/synthetic',acquiredAt:new Date().toISOString(),versionLabel:'synthetic'},
     fragments:[fragment],providedFragmentIds:[fragment.id],fullTextProvided:false,processingAuthorization:'not_evaluated',citationValidation:'identity_only'};
-  const prompt=extractionPrompt(bundle,'[SYNTHETIC] Offline contract');
+  const prompt=extractionPrompt(bundle,'[SYNTHETIC] Offline contract','ep-abstract-extract-v3');
   const output=fixedModelExtractionOutput(bundle,'control');
   return {bundle,prompt,input:prompt.input as ReplayInput,output};
 }
 test('current prompt contains exactly the validator-generated shape, only research output; fixture example is synthetic',()=>{
   const {prompt,output}=fixture();
-  assert.deepEqual(JSON.parse(prompt.system.split('JSON_SCHEMA:\n')[1]),extractionResponseSchema());
-  assert.deepEqual(extractionResponseSchema().required,['groups']);
+  assert.deepEqual(JSON.parse(prompt.system.split('JSON_SCHEMA:\n')[1]),extractionResponseSchema('ep-abstract-extract-v3'));
+  assert.deepEqual(extractionResponseSchema('ep-abstract-extract-v3').required,['groups']);
   assert.equal(modelExtractionSchema.safeParse(output).success,true);
   for(const extra of [{schemaVersion:'ep-abstract-extract-v2'},{processing:{}},{publicationState:'published'},{reviewApproved:true}]) assert.equal(modelExtractionSchema.safeParse({...output,...extra}).success,false);
   assert.equal(managedExtractionOutput(output).schemaVersion,'ep-abstract-extract-v2');
@@ -127,7 +127,7 @@ test('rules/prompt changes and repeated replay have no model or network entry po
   const previous=EXTRACTION_RULES.sample_scope_missing;
   try {
     (EXTRACTION_RULES as Record<string,string>).sample_scope_missing=previous+' SYNTHETIC rule revision.';
-    assert.notEqual(extractionPrompt(bundle,null).system,prompt.system);
+    assert.notEqual(extractionPrompt(bundle,null,'ep-abstract-extract-v3').system,prompt.system);
     for(let i=0;i<2;i++) assert.equal(replayExtractionResponse(output,input).newModelCalls,0);
     assert.equal(requests,0);
     for(const name of ['../packages/backend/src/research/extraction-replay.ts','../scripts/ep-pr2b-replay.ts']) {

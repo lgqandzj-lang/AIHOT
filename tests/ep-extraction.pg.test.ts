@@ -120,6 +120,7 @@ test('synthetic length-stop response remains raw but never enters a complete per
 test('missing fields remain unknown and an empty abstract never invokes injected response',async () => {
   const {bundle} = await save('control');
   const draft = await extractOfflineBundle(db,bundle.id,async () => ({schemaVersion:'ep-abstract-extract-v1',groups:[{groupId:'g1'}]}));
+  assert.ok(draft.output?.schemaVersion === 'ep-abstract-extract-v1');
   assert.equal(draft.output!.groups[0]!.sample.quantity,null); assert.equal(draft.output!.groups[0]!.radiationStrategy,null);
   const saved = await importLiteratureMetadata(db,abstractMetadata('10.9999/' + run + '.empty',null)); records.add(saved.recordId!);
   const empty = await buildAbstractMaterialBundle(db,saved.materialId); bundles.add(empty.id);
@@ -153,6 +154,7 @@ test('a real citation with an unsupported conclusion NEVER becomes semantic veri
 test('two groups in the same paper stay separate; no summed count or pooled denominator',async () => {
   const {bundle} = await save();
   const draft = await extractOfflineBundle(db,bundle.id,async () => fixedExtractionOutput(bundle,'original'));
+  assert.ok(draft.output?.schemaVersion === 'ep-abstract-extract-v1');
   assert.deepEqual(draft.output!.groups.map(item => item.sample.quantity!.value),[12,8]);
   assert.deepEqual(draft.output!.groups.map(item => item.sample.denominator!.value),['all 12 enrolled participants','all 8 enrolled participants']);
 });

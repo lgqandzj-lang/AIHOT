@@ -10,7 +10,7 @@ import { extractionSchema, modelExtractionSchema, compactExtractionSchema, manag
   extractionRuleIssues, extractionFields, extractionPrompt, LEGACY_EXTRACTION_VERSION,
   EXTRACTION_PROMPT_VERSION, EXTRACTION_OUTPUT_TOKENS } from './extraction-schema.ts';
 import type { ExtractionOutput } from './extraction-schema.ts';
-import { parseExtractionContent, validateCompactExtraction, extractionTruncation } from './extraction-validation.ts';
+import { parseExtractionContent, validateCompactExtraction, validateStructuredExtraction, extractionTruncation } from './extraction-validation.ts';
 import { trialPreflight, loadExtractionTrial, claimExtractionTrial, finishExtractionTrial } from './extraction-budget.ts';
 
 const json = (value: unknown): Parameter => JSON.parse(JSON.stringify(value ?? null)) as Parameter;
@@ -83,15 +83,19 @@ async function persist(db: Database, input: Awaited<ReturnType<typeof loadInput>
     // A live response always uses the same research-only schema as the new prompt.
     const legacy = origin === 'offline_fixed' && raw !== null && typeof raw === 'object'
       && 'schemaVersion' in raw && raw.schemaVersion === LEGACY_EXTRACTION_VERSION;
-    // Saved fixtures retain v1/v2. New live output uses the compact v3 wire contract.
-    const compact = origin === 'live' || compactExtractionSchema.safeParse(raw).success ? validateCompactExtraction(raw,input.input) : null;
+    // Historical injected fixtures retain v1/v2/v3; a new live response uses v4.
+    const isStructured = origin === 'live' || raw !== null && typeof raw === 'object' && 'overallSample' in raw;
+    const structured = isStructured ? validateStructuredExtraction(raw,input.input) : null;
+    const compact = !structured && compactExtractionSchema.safeParse(raw).success ? validateCompactExtraction(raw,input.input) : null;
+    const checked = structured ?? compact;
+    const privateAllowed = structured?.privateDraftAllowed ?? compact?.completeCardAllowed ?? true;
     const parsed = legacy ? extractionSchema.safeParse(raw) : modelExtractionSchema.safeParse(raw);
-    if (compact) {
-      draft.formatStatus = compact.formatStatus; draft.citationStatus = compact.citationStatus;
-      draft.fieldCompletenessStatus = compact.fieldCompletenessStatus;
-      draft.issues.push(...compact.formatErrors,...compact.citationErrors);
-      if (compact.output && !compact.completeCardAllowed && !compact.contentIssues.length) draft.issues.push('all_research_fields_unknown: no complete card');
-      draft.output = compact.output;
+    if (checked) {
+      draft.formatStatus = checked.formatStatus; draft.citationStatus = checked.citationStatus;
+      draft.fieldCompletenessStatus = checked.fieldCompletenessStatus;
+      draft.issues.push(...checked.formatErrors,...checked.citationErrors);
+      if (checked.output && !privateAllowed && !checked.contentIssues.length) draft.issues.push('all_research_fields_unknown: no complete card');
+      draft.output = checked.output;
       draft.state = 'invalid_output';
     } else if (!parsed.success) {
       draft.formatStatus = 'invalid'; draft.state = 'invalid_output';
@@ -109,7 +113,7 @@ async function persist(db: Database, input: Awaited<ReturnType<typeof loadInput>
       const unique = [...new Map(references.map(item => [JSON.stringify(item),item])).values()];
       try {
         await validateAbstractCitations(db,input.bundle.id,unique);
-        draft.citationStatus = 'valid'; draft.state = ruleIssues.length || compact && !compact.completeCardAllowed ? 'invalid_output' : 'private_draft';
+        draft.citationStatus = 'valid'; draft.state = ruleIssues.length || checked && !privateAllowed ? 'invalid_output' : 'private_draft';
       } catch (error) {
         draft.citationStatus = 'invalid'; draft.state = 'invalid_output';
         draft.issues.push('Citation identity rejected: ' + String(error));

@@ -8,7 +8,9 @@ import path from 'node:path';
 import https from 'node:https';
 import { extractionCliArguments, localExtractionDatabase, privateApprovalPath, rawExtractionDiagnosticRows } from '../scripts/ep-pr2b-extract-one.ts';
 import { assertEpTestDatabase } from './fixtures/ep-test-safety.ts';
-import { extractionMetadata, fixedCompactExtractionOutput } from './fixtures/ep-extraction.ts';
+import { extractionMetadata } from './fixtures/ep-extraction.ts';
+import { abstractMetadata } from './fixtures/ep-abstract.ts';
+import { structuredExtractionFixture } from './fixtures/ep-extraction-structure.ts';
 assertEpTestDatabase(process.env.DATABASE_URL);
 process.env.MODEL_CALLS_ENABLED = 'false'; process.env.COLLECT_ENABLED = 'false'; process.env.INDEXNOW_SUBMIT_ENABLED = 'false';
 const { sql, closeDb } = await import('../packages/backend/src/db.ts');
@@ -114,12 +116,13 @@ test('one loopback HTTPS response exports private fields and usage; rerunning ca
     '-subj','/CN=EP-CLI-LOOPBACK-TEST','-addext','subjectAltName=IP:127.0.0.1','-keyout',keyFile,'-out',certFile],
     {encoding:'utf8',timeout:15_000});
   assert.equal(certificate.status,0,certificate.stderr); // Child-only CA trust, never disable TLS verification.
-  const saved=await importLiteratureMetadata(researchDatabase(sql),extractionMetadata('control','10.9999/cli-https-' + randomUUID()));
+  const fixture=structuredExtractionFixture();
+  const saved=await importLiteratureMetadata(researchDatabase(sql),abstractMetadata('10.9999/cli-https-' + randomUUID(),fixture.bundle.fragments[0]!.text));
   records.push(saved.recordId!);
   const {buildAbstractMaterialBundle}=await import('../packages/backend/src/research/abstract-evidence.ts');
   const bundle=await buildAbstractMaterialBundle(researchDatabase(sql),saved.materialId);
   const directory=path.resolve('.data/ep-pr2b','live-' + bundle.id); roots.push(directory);
-  const response=fixedCompactExtractionOutput(bundle,'control'); let hits=0;
+  const response=JSON.parse(JSON.stringify(fixture.output).replaceAll(fixture.bundle.fragments[0]!.id,bundle.fragments[0]!.id)); let hits=0;
   const server=https.createServer({key:await readFile(keyFile),cert:await readFile(certFile)},(request,res) => {
     hits++;
     assert.equal(request.url,'/v1/chat/completions');
@@ -163,7 +166,7 @@ test('one loopback HTTPS response exports private fields and usage; rerunning ca
     assert.equal(metrics.usage.prompt_tokens,11); assert.equal(metrics.usage.completion_tokens,7);
     assert.equal(metrics.actualReceiptCost,null); assert.equal(metrics.semanticStatus,'not_evaluated'); assert.equal(metrics.requiresHumanReview,true);
     const report=await readFile(path.join(directory,'field-report.md'),'utf8');
-    assert.ok(report.includes('待人工核对') && report.includes('SYNTH-MARKER') && report.includes('5 animals'));
+    assert.ok(report.includes('待人工核对') && report.includes('Group Alpha') && report.includes('78.4'));
     const again=await invoke(runArgs); assert.equal(again.status,2); assert.equal(hits,1);
     const prepareAgain=await invoke(['prepare','--bundle',bundle.id]); assert.equal(prepareAgain.status,0); assert.equal(hits,1);
     assert.equal(await readFile(path.join(directory,'field-report.md'),'utf8'),report);

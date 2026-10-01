@@ -1,0 +1,449 @@
+{
+  "recordType": "SYNTHETIC_TEST_RECORD_ONLY",
+  "description": "Authored synthetic structure example. No paper, no repaired answer, no model request.",
+  "inputManifest": {
+    "bundleId": "10000000-0000-4000-8000-000000000002",
+    "materialId": "10000000-0000-4000-8000-000000000001",
+    "materialHash": "fb27f30520bd290bdd2befbd09e54c2303ef24bcb92dd80064b0621b4bdeaf7d",
+    "splitRuleVersion": "abstract-source-v1",
+    "scope": "abstract",
+    "fullTextProvided": false,
+    "title": "[SYNTHETIC TEST RECORD ONLY] Structure v4",
+    "providedFragmentIds": [
+      "10000000-0000-4000-8000-000000000003"
+    ],
+    "fragments": [
+      {
+        "citation": {
+          "fragmentId": "10000000-0000-4000-8000-000000000003",
+          "materialId": "10000000-0000-4000-8000-000000000001",
+          "materialHash": "fb27f30520bd290bdd2befbd09e54c2303ef24bcb92dd80064b0621b4bdeaf7d",
+          "splitRuleVersion": "abstract-source-v1",
+          "fragmentHash": "acd32c21c23ae89bc8e86b702a2b9bdd04e1391b4fb536876b9b256c25fe16e6"
+        },
+        "ordinal": 1,
+        "sectionLabel": "Synthetic test record",
+        "scope": "abstract",
+        "text": "[SYNTHETIC TEST RECORD ONLY] Overall, 22 participants and 88 pulmonary veins were studied. Group Alpha enrolled 9 participants and studied 36 pulmonary veins; Group Beta enrolled 13 participants and studied 52 pulmonary veins. These are reported group counts, not result denominators. Group Alpha had median procedural duration 48 minutes; Group Beta had median procedural duration 26 minutes. The source explicitly compared these two medians. Group Alpha success was 78.4 percent at 12 months after the procedure; the numerator and assessed denominator were not reported. A mapping stage before ablation was described for Group Alpha."
+      }
+    ]
+  },
+  "modelOutput": {
+    "overallSample": [
+      {
+        "quantity": {
+          "value": 22,
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "unit": {
+          "value": "participants",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "denominator": {
+          "value": "all studied participants",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        }
+      },
+      {
+        "quantity": {
+          "value": 88,
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "unit": {
+          "value": "pulmonary veins",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "denominator": {
+          "value": "all studied pulmonary veins",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        }
+      }
+    ],
+    "groups": [
+      {
+        "groupId": "g1",
+        "groupLabel": {
+          "value": "Group Alpha",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "researchSubjects": {
+          "value": "participants",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "productRoles": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "sample": [
+          {
+            "quantity": {
+              "value": 9,
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            },
+            "unit": {
+              "value": "participants",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            },
+            "denominator": {
+              "value": "Group Alpha enrolled participants",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            }
+          },
+          {
+            "quantity": {
+              "value": 36,
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            },
+            "unit": {
+              "value": "pulmonary veins",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            },
+            "denominator": {
+              "value": "Group Alpha studied pulmonary veins",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            }
+          }
+        ],
+        "imagingMethods": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "radiationStrategy": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        }
+      },
+      {
+        "groupId": "g2",
+        "groupLabel": {
+          "value": "Group Beta",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "researchSubjects": {
+          "value": "participants",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "productRoles": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "sample": [
+          {
+            "quantity": {
+              "value": 13,
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            },
+            "unit": {
+              "value": "participants",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            },
+            "denominator": {
+              "value": "Group Beta enrolled participants",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            }
+          },
+          {
+            "quantity": {
+              "value": 52,
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            },
+            "unit": {
+              "value": "pulmonary veins",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            },
+            "denominator": {
+              "value": "Group Beta studied pulmonary veins",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            }
+          }
+        ],
+        "imagingMethods": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "radiationStrategy": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        }
+      }
+    ],
+    "results": [
+      {
+        "resultId": "r1",
+        "kind": "duration",
+        "population": {
+          "value": {
+            "scope": "group",
+            "groupId": "g1"
+          },
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "metric": {
+          "value": "procedural duration",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "resultValue": {
+          "value": 48,
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "unit": {
+          "value": "minutes",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "statistic": {
+          "value": "median",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "numerator": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "outcomeDenominator": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "countUnit": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        }
+      },
+      {
+        "resultId": "r2",
+        "kind": "duration",
+        "population": {
+          "value": {
+            "scope": "group",
+            "groupId": "g2"
+          },
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "metric": {
+          "value": "procedural duration",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "resultValue": {
+          "value": 26,
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "unit": {
+          "value": "minutes",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "statistic": {
+          "value": "median",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "numerator": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "outcomeDenominator": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "countUnit": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        }
+      },
+      {
+        "resultId": "r3",
+        "kind": "outcome",
+        "population": {
+          "value": {
+            "scope": "group",
+            "groupId": "g1"
+          },
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "metric": {
+          "value": "success",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "resultValue": {
+          "value": 78.4,
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "unit": {
+          "value": "%",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "statistic": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "numerator": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "outcomeDenominator": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        },
+        "countUnit": {
+          "value": null,
+          "citations": [],
+          "status": "not_reported"
+        }
+      }
+    ],
+    "comparisons": [
+      {
+        "resultIds": {
+          "value": [
+            "r1",
+            "r2"
+          ],
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "description": {
+          "value": "explicit comparison of the Group Alpha and Group Beta procedural-duration medians",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        }
+      }
+    ],
+    "proceduralContexts": [
+      {
+        "kind": "procedural_stage",
+        "population": {
+          "value": {
+            "scope": "group",
+            "groupId": "g1"
+          },
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        },
+        "stage": {
+          "value": "mapping before ablation",
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        }
+      }
+    ],
+    "observationTimes": [
+      {
+        "resultId": "r3",
+        "time": {
+          "value": {
+            "kind": "observation_window",
+            "start": 12,
+            "end": 12,
+            "unit": "months",
+            "anchor": {
+              "value": "after the procedure",
+              "citations": [
+                "10000000-0000-4000-8000-000000000003"
+              ]
+            }
+          },
+          "citations": [
+            "10000000-0000-4000-8000-000000000003"
+          ]
+        }
+      }
+    ]
+  },
+  "programValidation": {
+    "schemaVersion": "ep-abstract-extract-v4",
+    "formatStatus": "valid",
+    "citationStatus": "valid",
+    "fieldCompletenessStatus": "required_fields_present",
+    "semanticStatus": "not_evaluated",
+    "realModelEffectValidated": false,
+    "modelRequests": 0,
+    "humanApprovalGranted": false
+  }
+}
