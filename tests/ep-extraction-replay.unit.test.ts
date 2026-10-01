@@ -12,7 +12,7 @@ import type { ReplayInput } from '../packages/backend/src/research/extraction-re
 import { replayCostRecord, replayPrivatePath } from '../scripts/ep-pr2b-replay.ts';
 import { extractionOutputDirectory } from '../scripts/ep-pr2b-extract-one.ts';
 import { inputFingerprint } from '../packages/backend/src/research/normalize.ts';
-import { fixedModelExtractionOutput } from './fixtures/ep-extraction.ts';
+import { fixedModelExtractionOutput, fixedCompactExtractionOutput } from './fixtures/ep-extraction.ts';
 import type { AbstractMaterialBundle } from '../packages/backend/src/research/abstract-evidence.ts';
 
 function fixture() {
@@ -150,10 +150,12 @@ test('offline CLI refuses execution flags, paths outside private storage and ove
   await assert.rejects(replayPrivatePath(process.cwd(),'package.json'),/private JSON/);
   const directory=path.resolve('.data/ep-pr2b','replay-test-'+randomUUID()); await mkdir(directory);
   try {
-    const {prompt,output}=fixture();
+    const {prompt,bundle}=fixture();
     const body={model:'SYNTHETIC-replay',messages:[{role:'system',content:prompt.system},{role:'user',content:prompt.user}],response_format:{type:'json_object'},max_tokens:2048};
     const files={request:{body,bodyHash:sha256(stableJson(body))},input:prompt,
-      receipt:{cost:null,response:{model:'SYNTHETIC-replay',created:1,choices:[{finish_reason:'length',message:{content:JSON.stringify(output)}}],usage:{prompt_tokens:10,completion_tokens:4}}},
+      receipt:{cost:null,response:{model:'SYNTHETIC-replay',created:1,
+        choices:[{finish_reason:'length',message:{content:JSON.stringify(fixedCompactExtractionOutput(bundle,'control'))}}],
+        usage:{prompt_tokens:10,completion_tokens:4}}},
       failure:{formatStatus:'valid',issues:[]},pricing:{model:'SYNTHETIC-replay',currency:'CNY',officialUrl:'https://provider.example/synthetic-pricing',verifiedAt:'2026-01-01T00:00:00Z',peak:{cacheMissInputPerMillion:2,cacheHitInputPerMillion:1,outputPerMillion:8}}};
     const args:string[]=[];
     for(const [name,data] of Object.entries(files)) {const filename=path.join(directory,name+'.json');await writeFile(filename,JSON.stringify(data),'utf8');args.push('--'+name,filename);}
@@ -162,6 +164,7 @@ test('offline CLI refuses execution flags, paths outside private storage and ove
     assert.equal(invoke().status,0);
     const report=await readFile(path.join(out,'replay.json'),'utf8');
     assert.equal(JSON.parse(report).metadata.truncationAssessment,'provider_reports_length_limit');
+    assert.equal(JSON.parse(report).normalizedDraft,null);assert.equal(JSON.parse(report).after.length,0);
     assert.equal(invoke().status,2,'output directory cannot be reused');
     assert.equal(await readFile(path.join(out,'replay.json'),'utf8'),report);
     assert.ok((await replayPrivatePath(process.cwd(),path.join(directory,'request.json'))).endsWith('request.json'));

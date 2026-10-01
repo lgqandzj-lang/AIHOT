@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { replayExtractionResponse } from '../packages/backend/src/research/extraction-replay.ts';
 import type { ReplayInput } from '../packages/backend/src/research/extraction-replay.ts';
+import { validateCompactExtraction } from '../packages/backend/src/research/extraction-validation.ts';
+import { extractionFields } from '../packages/backend/src/research/extraction-schema.ts';
 import { stableJson } from '../packages/backend/src/lib/ids.ts';
 
 const hash = (value:string) => createHash('sha256').update(value).digest('hex');
@@ -83,12 +85,35 @@ export async function extractionReplayCli(args=process.argv.slice(2)) {
   const body=request.body as {model?:unknown;messages?:unknown;response_format?:unknown;max_tokens?:unknown};
   if(request.bodyHash!==hash(stableJson(body))) throw new Error('Saved final request hash mismatch.');
   const expectedMessages=[{role:'system',content:savedInput.system},{role:'user',content:savedInput.user}];
-  if(JSON.stringify(body.messages)!==JSON.stringify(expectedMessages)||JSON.stringify(JSON.parse(savedInput.user))!==JSON.stringify(savedInput.input)) throw new Error('Saved request and provided-input manifest differ.');
+  const compactInput={scope:'abstract',fullTextProvided:false,title:savedInput.input.title,
+    fragments:savedInput.input.fragments.map((item:any)=>({fragmentId:item.citation.fragmentId,sectionLabel:item.sectionLabel,text:item.text}))};
+  const wire=JSON.parse(savedInput.user);
+  if(JSON.stringify(body.messages)!==JSON.stringify(expectedMessages)
+    || (stableJson(wire)!==stableJson(savedInput.input)&&stableJson(wire)!==stableJson(compactInput))) throw new Error('Saved request and provided-input manifest differ.');
   const choice=receipt.response?.choices?.[0];
   if(typeof choice?.message?.content!=='string') throw new Error('Saved receipt has no textual model response.');
-  const raw=JSON.parse(choice.message.content);
+  let raw:unknown=null; let jsonError:string|null=null;
+  try {raw=JSON.parse(choice.message.content);} catch(error) {jsonError=String(error);}
   const legacyResponse=typeof savedInput.system==='string'&&savedInput.system.includes('schemaVersion "ep-abstract-extract-v1"');
-  const replay=replayExtractionResponse(raw,savedInput.input as ReplayInput,{legacyResponse});
+  const current=savedInput.system.includes('Wire contract: ep-abstract-extract-v3.');
+  const validation=current ? validateCompactExtraction(raw,savedInput.input as ReplayInput,
+    {finishReason:choice.finish_reason,outputTokens:receipt.usage?.completion_tokens??receipt.response?.usage?.completion_tokens,maxTokens:body.max_tokens as number}) : null;
+  const resolvedFields=validation?.output ? extractionFields(validation.output).map(field=>{
+    const fieldPath=`groups[${validation.output!.groups.findIndex(group=>group.groupId===field.groupId)}].${field.path}`;
+    return {path:fieldPath,expected:'v3 research value with exact provided fragment IDs or explicit absence',
+      actualShape:'validated v3 field; supplied reference identity resolved',rawNode:field.value,
+      formatErrors:[],citationStatus:field.citations.length?'valid' as const:'not_required' as const,citationErrors:[],
+      evidence:savedInput.input.fragments.filter((item:ReplayInput['fragments'][number])=>field.citations.some(ref=>ref.fragmentId===item.citation.fragmentId)),
+      contentIssues:validation.contentIssues.filter(item=>item.path===fieldPath||fieldPath.startsWith(item.path+'.')).map(item=>item.code),
+      semanticStatus:'not_evaluated' as const,qualified:false};
+  }) : [];
+  const replay=validation ? {newModelCalls:0,realModelEffectValidated:false,semanticStatus:'not_evaluated',
+    originalFormatValid:validation.formatStatus==='valid',normalizedFormatValid:validation.formatStatus==='valid',
+    originalFormatErrors:validation.formatErrors,normalizedFormatErrors:validation.formatErrors,
+    candidate:raw,transformations:[],before:resolvedFields,after:resolvedFields,contentIssues:validation.contentIssues,
+    normalizedDraft:validation.output,truncationStatus:validation.truncation.status,fieldCompletenessStatus:validation.fieldCompletenessStatus,
+    sourceCoverageStatus:'not_evaluated',state:validation.completeCardAllowed?'private_unverified':'invalid_output',humanReviewRequired:true,qualified:false}
+    : replayExtractionResponse(raw,savedInput.input as ReplayInput,{legacyResponse,finishReason:choice.finish_reason??null});
   const pricing=JSON.parse(originals.pricing.text) as ReplayPricing;
   if(pricing.model!==body.model) throw new Error('Saved price snapshot is for another request model.');
   if(ledger?.receipt&&(ledger.receipt.request_model!==body.model||ledger.receipt.response_model!==receipt.response.model||ledger.receipt.cost!==receipt.cost)) throw new Error('Saved ledger metadata differs from the original receipt.');
@@ -99,12 +124,14 @@ export async function extractionReplayCli(args=process.argv.slice(2)) {
   if(!inside(privateRoot,directory)||!inside(privateRoot,parent)||!/^replay-[a-z0-9-]+$/i.test(path.basename(directory))) throw new Error('A fresh replay-* output directory inside .data is required.');
   await mkdir(directory); // EEXIST deliberately prevents any overwrite of a prior replay or original output.
   const metadata={checkedAt:new Date().toISOString(),newModelCalls:0,requestModel:body.model,responseModel:receipt.response.model??null,
-    responseFormat:body.response_format,finalOutputCap:body.max_tokens,finishReason:choice.finish_reason??null,
+    responseFormat:body.response_format,finalOutputCap:body.max_tokens,finishReason:choice.finish_reason??null,jsonError,
     truncationAssessment:choice.finish_reason==='length'?'provider_reports_length_limit':choice.finish_reason==='stop'?'provider_reports_stop; completeness still requires source review':'unknown',
     originalFailure:{formatStatus:failure.formatStatus,issues:failure.issues},originalFormatErrors:replay.originalFormatErrors,
     originalFileHashes:Object.fromEntries(Object.entries(originals).map(([name,file])=>[name,{path:file.path,sha256:file.sha256}]))};
   const put=(name:string,value:unknown) => writeFile(path.join(directory,name),JSON.stringify(value,null,2),{encoding:'utf8',flag:'wx'});
-  await put('replay.json',{metadata,...replay}); await put('normalized-candidate.json',replay.candidate);
+  await put('replay.json',{metadata,...replay,semanticStatus:'not_evaluated',
+    before:replay.before.map(row=>({...row,semanticStatus:'not_evaluated'})),after:replay.after.map(row=>({...row,semanticStatus:'not_evaluated'}))});
+  await put('normalized-candidate.json',replay.candidate);
   await put('transformations.json',replay.transformations); await put('cost-record.json',cost);
   if(historicalReview) await put('historical-source-comparison.json',historicalReview);
   const escape=(value:unknown)=>String(typeof value==='string'?value:JSON.stringify(value)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\|/g,'\\|').replace(/\r?\n/g,'<br>');

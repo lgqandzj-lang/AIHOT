@@ -143,7 +143,7 @@ export async function extractionCli(args = process.argv.slice(2)) {
     const displayFields = [...report.fields];
     // JSON syntax can be valid while field shape is invalid. Keep those values
     // reviewable without promoting them into parsed_output or changing checks.
-    if (draft.formatStatus === 'invalid' && !displayFields.length) {
+    if (draft.formatStatus === 'invalid' && report.truncationStatus !== 'truncated' && !displayFields.length) {
       try {
         const envelope = receipt?.response as { choices?: Array<{ message?: { content?: unknown } }> } | undefined;
         const content = envelope?.choices?.[0]?.message?.content;
@@ -159,19 +159,21 @@ export async function extractionCli(args = process.argv.slice(2)) {
           } catch { evidence.push({reference,identity:'invalid' as const,scope:'abstract' as const,label:null,text:null}); }
         }
         displayFields.push({groupId:field.groupId,path:field.path,value:field.value,
-          citations:field.citations as Parameters<typeof readAbstractFragment>[2][],evidence,semanticStatus:'not_performed' as const});
+          citations:field.citations as Parameters<typeof readAbstractFragment>[2][],evidence,semanticStatus:'not_evaluated' as const});
       }
     }
     const escape = (value: unknown) => String(typeof value === 'string' ? value : JSON.stringify(value)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
     const rows = displayFields.map(field => `| ${escape(field.groupId + ' / ' + field.path)} | ${field.value === null ? ({unknown:'未知',not_reported:'提供摘要未报告',not_applicable:'不适用（引用待核查）'}[field.absenceStatus ?? 'unknown']) : escape(field.value)} | ${field.evidence.map(item => escape(item.reference?.fragmentId) + '<br>' + escape(item.text ?? '引用被拒绝')).join('<br>') || '—'} | 待人工核对 | ${rawDiagnosticRows.length ? '整体结构被拒绝；仅展示原始诊断值，未自动修复。' : ''}${field.value === null ? '缺失状态按模型原值保留；尚未人工判断' : field.evidence.some(item => item.identity !== 'valid') ? '引用身份不合法' : !field.evidence.length ? '非空值缺少模型引用' : '引用存在；语义支持尚未核查'} |`);
-    const text = `# 私有实际模型提取\n\n格式：${draft.formatStatus}；引用身份：${draft.citationStatus}；语义：未核查。仍需人工判断是否支持及是否需要修改。\n\n| 字段 | 模型输出 | 原文引用 | 是否支持 | 错误或缺失原因 |\n|---|---|---|---|---|\n`
+    const text = `# 私有实际模型提取\n\n格式：${report.formatStatus}；字段完整性（依赖检查）：${report.fieldCompletenessStatus}；原文覆盖：${report.sourceCoverageStatus}；引用身份：${report.citationStatus}；语义：${report.semanticStatus}；截断：${report.truncationStatus}。仍需人工判断是否支持及是否需要修改。\n\n| 字段 | 模型输出 | 原文引用 | 是否支持 | 错误或缺失原因 |\n|---|---|---|---|---|\n`
       + (rows.length ? rows.join('\n') : fieldLabels.map(label => `| ${label} | 未形成可用结构化结果 | — | 未评估 | ${escape(draft.issues.join('; '))} |`).join('\n')) + '\n';
     const metrics = { trialId: trial.id, draftId: draft.id, receiptId: draft.receiptId,
       networkAttemptsRecorded: receipt?.attempts ?? 0, providerResultStatus: receipt?.status ?? null,
       usage: receipt?.usage ?? null, currency: parsed.success ? parsed.data.currency : null,
       reservedCeilingMicros: trial.reserved_micros, actualReceiptCost: receipt?.cost ?? null,
       costNote: 'The reserved ceiling is not an invoice; null cost is unknown, not free.',
-      modelOutputReceived: draft.formatStatus !== 'not_received', semanticStatus: 'not_performed',
+      modelOutputReceived: draft.formatStatus !== 'not_received', semanticStatus: 'not_evaluated',
+      formatStatus:report.formatStatus,fieldCompletenessStatus:report.fieldCompletenessStatus,
+      citationIdentityStatus:report.citationStatus,sourceCoverageStatus:report.sourceCoverageStatus,truncationStatus:report.truncationStatus,
       realModelEffectValidated: false, requiresHumanReview: true, automaticRetries: 0,
       rawDiagnosticFieldCount: rawDiagnosticRows.length };
     await writeFile(path.join(directory, 'field-report.md'), text, 'utf8');

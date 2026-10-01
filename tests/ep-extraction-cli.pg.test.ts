@@ -8,7 +8,7 @@ import path from 'node:path';
 import https from 'node:https';
 import { extractionCliArguments, localExtractionDatabase, privateApprovalPath, rawExtractionDiagnosticRows } from '../scripts/ep-pr2b-extract-one.ts';
 import { assertEpTestDatabase } from './fixtures/ep-test-safety.ts';
-import { extractionMetadata, fixedModelExtractionOutput } from './fixtures/ep-extraction.ts';
+import { extractionMetadata, fixedCompactExtractionOutput } from './fixtures/ep-extraction.ts';
 assertEpTestDatabase(process.env.DATABASE_URL);
 process.env.MODEL_CALLS_ENABLED = 'false'; process.env.COLLECT_ENABLED = 'false'; process.env.INDEXNOW_SUBMIT_ENABLED = 'false';
 const { sql, closeDb } = await import('../packages/backend/src/db.ts');
@@ -119,7 +119,7 @@ test('one loopback HTTPS response exports private fields and usage; rerunning ca
   const {buildAbstractMaterialBundle}=await import('../packages/backend/src/research/abstract-evidence.ts');
   const bundle=await buildAbstractMaterialBundle(researchDatabase(sql),saved.materialId);
   const directory=path.resolve('.data/ep-pr2b','live-' + bundle.id); roots.push(directory);
-  const response=fixedModelExtractionOutput(bundle,'control'); let hits=0;
+  const response=fixedCompactExtractionOutput(bundle,'control'); let hits=0;
   const server=https.createServer({key:await readFile(keyFile),cert:await readFile(certFile)},(request,res) => {
     hits++;
     assert.equal(request.url,'/v1/chat/completions');
@@ -161,7 +161,7 @@ test('one loopback HTTPS response exports private fields and usage; rerunning ca
     assert.ok(!result.stdout.includes(modelEnvironment.LLM_API_KEY));
     const metrics=JSON.parse(result.stdout); assert.equal(metrics.networkAttemptsRecorded,1);
     assert.equal(metrics.usage.prompt_tokens,11); assert.equal(metrics.usage.completion_tokens,7);
-    assert.equal(metrics.actualReceiptCost,null); assert.equal(metrics.semanticStatus,'not_performed'); assert.equal(metrics.requiresHumanReview,true);
+    assert.equal(metrics.actualReceiptCost,null); assert.equal(metrics.semanticStatus,'not_evaluated'); assert.equal(metrics.requiresHumanReview,true);
     const report=await readFile(path.join(directory,'field-report.md'),'utf8');
     assert.ok(report.includes('待人工核对') && report.includes('SYNTH-MARKER') && report.includes('5 animals'));
     const again=await invoke(runArgs); assert.equal(again.status,2); assert.equal(hits,1);

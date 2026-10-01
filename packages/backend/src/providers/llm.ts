@@ -98,7 +98,7 @@ export interface ChatJsonOptions<S extends z.ZodType> {
   timeoutMs?: number;
   /** false: the model answers in its own text format (no JSON mode); `parse` turns it into the schema's input. */
   json?: boolean;
-  parse?: (content: string) => unknown;
+  parse?: (content: string, completion?: {finishReason:string|null;outputTokens:number|null}) => unknown;
   /** Explicit one-request trials cannot be retried or released by recovery. */
   retryPolicy?: "existing" | "never";
   /** Bind a preflight and monetary reservation to the final body and endpoint. */
@@ -251,7 +251,10 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
   const content = response.choices?.[0]?.message?.content ?? "";
   let parsed: z.infer<S>;
   try {
-    parsed = opts.schema.parse(opts.parse ? opts.parse(content) : extractJson(content));
+    parsed = opts.schema.parse(opts.parse ? opts.parse(content, {
+      finishReason:response.choices?.[0]?.finish_reason ?? null,
+      outputTokens:typeof response.usage?.completion_tokens === 'number' ? response.usage.completion_tokens : null,
+    }) : extractJson(content));
   } catch (error) {
     // Unusable output: record it and let a later attempt pay for a fresh answer.
     await rejectReceivedResponse(receipt.receiptId, `unusable output: ${String(error).slice(0, 500)}`);

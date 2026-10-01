@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { assertEpTestDatabase } from './fixtures/ep-test-safety.ts';
-import { extractionMetadata, fixedExtractionOutput, fixedModelExtractionOutput } from './fixtures/ep-extraction.ts';
+import { extractionMetadata, fixedExtractionOutput, fixedModelExtractionOutput, fixedCompactExtractionOutput } from './fixtures/ep-extraction.ts';
 import type { ExtractionVariant } from './fixtures/ep-extraction.ts';
 import { abstractMetadata } from './fixtures/ep-abstract.ts';
 import { record } from './fixtures/ep-research.ts';
@@ -66,14 +66,14 @@ after(async () => {
 test('one private bundle produces a persisted draft and per-field readback; no model/prose call',async () => {
   const {bundle} = await save(); let hits = 0;
   const draft = await extractOfflineBundle(db,bundle.id,async input => {
-    hits++; assert.deepEqual(JSON.parse(input.user).providedFragmentIds,bundle.providedFragmentIds);
+    hits++; assert.deepEqual(JSON.parse(input.user).fragments.map((item:{fragmentId:string})=>item.fragmentId),bundle.providedFragmentIds);
     assert.ok(!input.user.includes('radiationStrategy')); return fixedExtractionOutput(bundle,'original');
   });
   assert.equal(hits,1); assert.equal(draft.state,'private_draft'); assert.equal(draft.formatStatus,'valid'); assert.equal(draft.citationStatus,'valid');
   assert.equal(draft.semanticStatus,'not_performed');
   const report = await extractionFieldReport(db,draft.id);
   assert.equal(hits,1); assert.ok(report.fields.length > 10);
-  assert.ok(report.fields.every(field => field.semanticStatus === 'not_performed' && field.evidence.every(item => item.identity === 'valid')));
+  assert.ok(report.fields.every(field => field.semanticStatus === 'not_evaluated' && field.evidence.every(item => item.identity === 'valid')));
   assert.ok(renderExtractionReport(report).includes('真实模型效果尚未验证'));
 });
 test('research-only v2 response persists a program-managed version; evidence and incomplete claims remain separate',async()=>{
@@ -84,7 +84,7 @@ test('research-only v2 response persists a program-managed version; evidence and
   assert.equal(draft.output!.schemaVersion,'ep-abstract-extract-v2');assert.equal(draft.state,'private_draft');
   const report=await extractionFieldReport(db,draft.id);
   assert.equal(report.fields.find(item=>item.path==='radiationStrategy')!.absenceStatus,'unknown');
-  assert.equal(report.semanticStatus,'not_performed');
+  assert.equal(report.semanticStatus,'not_evaluated');
   const bad=structuredClone(response) as any;
   bad.groups[0].productRoles[0].value.product='PFA';
   bad.groups[0].sample.denominator={value:null,citations:[],status:'unknown'};
@@ -94,6 +94,28 @@ test('research-only v2 response persists a program-managed version; evidence and
   assert.ok(invalid.issues.some(item=>item.includes('sample_scope_missing')));
   const controls=await extractOfflineBundle(db,bundle.id,async()=>({...response,schemaVersion:'ep-abstract-extract-v2',publicationState:'published'}));
   assert.equal(controls.formatStatus,'invalid');
+});
+test('current compact fixture stores exact private references and separates outcome denominator without changing PR1',async()=>{
+  const {bundle}=await save('control');
+  const output=fixedCompactExtractionOutput(bundle,'control');
+  const draft=await extractOfflineBundle(db,bundle.id,async()=>output);
+  assert.equal(draft.state,'private_draft');assert.equal(draft.output!.schemaVersion,'ep-abstract-extract-v3');
+  assert.equal(draft.output!.groups[0]!.sample.quantity!.value,5);
+  const report=await extractionFieldReport(db,draft.id);
+  assert.equal(report.fields.find(item=>item.path==='observationTimes[0].outcomeDenominator')!.value,null);
+  assert.equal(report.fieldCompletenessStatus,'required_fields_present');assert.equal(report.sourceCoverageStatus,'not_evaluated');
+  assert.equal(report.semanticStatus,'not_evaluated');
+  assert.ok(report.fields.every(item=>item.evidence.every(e=>e.identity==='valid')));
+});
+test('synthetic length-stop response remains raw but never enters a complete persisted card or diagnostic fields',async()=>{
+  const {bundle}=await save('control');const output=fixedCompactExtractionOutput(bundle,'control');
+  const draft=await extractOfflineBundle(db,bundle.id,async()=>output,{finishReason:'length'});
+  assert.equal(draft.state,'invalid_output');assert.equal(draft.output,null);assert.equal(draft.truncationStatus,'truncated');
+  const report=await extractionFieldReport(db,draft.id);
+  assert.equal(report.truncationStatus,'truncated');assert.equal(report.fields.length,0);
+  assert.equal(report.semanticStatus,'not_evaluated');
+  const [row]=await q<{raw_output:unknown;parsed_output:unknown}>('SELECT raw_output,parsed_output FROM ep_research_extraction_drafts WHERE id=$1::uuid',[draft.id]);
+  assert.deepEqual(row!.raw_output,output);assert.equal(row!.parsed_output,null);
 });
 test('missing fields remain unknown and an empty abstract never invokes injected response',async () => {
   const {bundle} = await save('control');
@@ -125,7 +147,7 @@ test('a real citation with an unsupported conclusion NEVER becomes semantic veri
   assert.equal(draft.formatStatus,'valid'); assert.equal(draft.citationStatus,'valid'); assert.equal(draft.semanticStatus,'not_performed');
   const report = await extractionFieldReport(db,draft.id);
   const field = report.fields.find(item => item.groupId === 'g1' && item.path === 'observationTimes[0].time')!;
-  assert.equal(field.value,'365 days'); assert.ok(field.evidence[0]!.text!.includes('30 days')); assert.equal(field.semanticStatus,'not_performed');
+  assert.equal(field.value,'365 days'); assert.ok(field.evidence[0]!.text!.includes('30 days')); assert.equal(field.semanticStatus,'not_evaluated');
   assert.equal(report.realModelEffectValidated,false);
 });
 test('two groups in the same paper stay separate; no summed count or pooled denominator',async () => {

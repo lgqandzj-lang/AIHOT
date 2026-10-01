@@ -138,10 +138,12 @@ function fieldChecks(raw:unknown,input:ReplayInput,legacy:boolean): ReplayField[
   }
   return rows;
 }
-export function replayExtractionResponse(raw:unknown,input:ReplayInput,options:{legacyResponse?:boolean}={}) {
+export function replayExtractionResponse(raw:unknown,input:ReplayInput,options:{legacyResponse?:boolean;finishReason?:string|null}={}) {
   validateReplayInput(input);
   const original=options.legacyResponse?extractionSchema.safeParse(raw):modelExtractionSchema.safeParse(raw);
-  const normalized=normalizeExtractionFormat(raw,options.legacyResponse);
+  const truncated=options.finishReason==='length';
+  const normalized=truncated ? {candidate:structuredClone(raw),transformations:[] as FormatTransformation[]}
+    : normalizeExtractionFormat(raw,options.legacyResponse);
   const parsed=modelExtractionSchema.safeParse(normalized.candidate);
   const contentIssues=extractionRuleIssues(normalized.candidate);
   const before=fieldChecks(raw,input,options.legacyResponse===true);
@@ -151,7 +153,10 @@ export function replayExtractionResponse(raw:unknown,input:ReplayInput,options:{
     originalFormatValid:original.success,originalFormatErrors:original.success?[]:original.error.issues.map(item=>({path:item.path,code:item.code})),
     normalizedFormatValid:parsed.success,normalizedFormatErrors:parsed.success?[]:parsed.error.issues.map(item=>({path:item.path,code:item.code})),
     candidate:normalized.candidate,transformations:normalized.transformations,before,after,contentIssues,
-    normalizedDraft:parsed.success?managedExtractionOutput(parsed.data):null,
-    state:parsed.success&&!blocked&&!contentIssues.length?'private_unverified':'invalid_output',
+    truncationStatus:truncated?'truncated':options.finishReason==='stop'?'not_indicated':'unknown',
+    fieldCompletenessStatus:parsed.success ? contentIssues.length?'missing_dependencies':'required_fields_present':'not_checked',
+    sourceCoverageStatus:'not_evaluated' as const,
+    normalizedDraft:parsed.success&&!truncated?managedExtractionOutput(parsed.data):null,
+    state:parsed.success&&!blocked&&!contentIssues.length&&!truncated?'private_unverified':'invalid_output',
     humanReviewRequired:true,qualified:false};
 }

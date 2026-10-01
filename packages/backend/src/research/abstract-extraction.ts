@@ -6,10 +6,11 @@ import { readAbstractMaterialBundle, readAbstractFragment, validateAbstractCitat
 import { chatJson, prepareChatJsonRequest, markReceiptsCompleted, ModelOutputError } from '../providers/llm.ts';
 import { BudgetExceededError, ProviderRejectedError } from '../providers/receipts.ts';
 import { config } from '../config.ts';
-import { extractionSchema, modelExtractionSchema, managedExtractionOutput, readStoredExtractionOutput,
+import { extractionSchema, modelExtractionSchema, compactExtractionSchema, managedExtractionOutput, readStoredExtractionOutput,
   extractionRuleIssues, extractionFields, extractionPrompt, LEGACY_EXTRACTION_VERSION,
   EXTRACTION_PROMPT_VERSION, EXTRACTION_OUTPUT_TOKENS } from './extraction-schema.ts';
 import type { ExtractionOutput } from './extraction-schema.ts';
+import { parseExtractionContent, validateCompactExtraction, extractionTruncation } from './extraction-validation.ts';
 import { trialPreflight, loadExtractionTrial, claimExtractionTrial, finishExtractionTrial } from './extraction-budget.ts';
 
 const json = (value: unknown): Parameter => JSON.parse(JSON.stringify(value ?? null)) as Parameter;
@@ -20,6 +21,8 @@ export interface ExtractionDraft {
   inputManifest: ReturnType<typeof extractionPrompt>['input']; output: ExtractionOutput | null;
   formatStatus: 'valid'|'invalid'|'not_received'; citationStatus: 'valid'|'invalid'|'not_checked';
   semanticStatus: 'not_performed'; state: DraftState; issues: string[];
+  fieldCompletenessStatus: 'required_fields_present'|'missing_dependencies'|'not_checked';
+  truncationStatus: 'truncated'|'not_indicated'|'unknown';
 }
 export class ExtractionOutcomeUnknown extends Error {}
 export type FixedExtractionResponse = (input: { system: string; user: string }) => Promise<unknown>;
@@ -38,7 +41,7 @@ export async function prepareExtractionRequest(db: Database, bundleId: string, m
   const input = await loadInput(db,bundleId);
   const opts = { model: modelKey, purpose: 'ep_abstract_extraction', subject: 'bundle:' + bundleId,
     promptVersion: EXTRACTION_PROMPT_VERSION, system: input.system, user: input.user,
-    schema: z.unknown(), parse: (value: string) => JSON.parse(value) as unknown,
+    schema: z.unknown(), parse: parseExtractionContent,
     temperature: 0, maxTokens: EXTRACTION_OUTPUT_TOKENS, retryPolicy: 'never' as const };
   const request = prepareChatJsonRequest(opts);
   const expectedMessages = [{role:'system',content:input.system},{role:'user',content:input.user}];
@@ -66,33 +69,47 @@ export async function extractionLivePreflight(db: Database, bundleId: string,
 }
 async function persist(db: Database, input: Awaited<ReturnType<typeof loadInput>>, raw: unknown,
   origin: ExtractionDraft['origin'], trialId: string | null, receiptId: number | null,
-  failure: 'unknown'|'invalid'|'rejected'|null = null) {
+  failure: 'unknown'|'invalid'|'truncated'|'rejected'|null = null) {
   const draft: ExtractionDraft = { id: randomUUID(), bundleId: input.bundle.id, origin, trialId, receiptId,
     inputManifest: input.input, output: null, formatStatus: 'not_received', citationStatus: 'not_checked',
-    semanticStatus: 'not_performed', state: failure === 'unknown' ? 'unknown' : failure ? 'invalid_output' : 'empty_input', issues: [] };
+    semanticStatus: 'not_performed', state: failure === 'unknown' ? 'unknown' : failure ? 'invalid_output' : 'empty_input', issues: [],
+    fieldCompletenessStatus:'not_checked',truncationStatus:failure === 'truncated' ? 'truncated' : 'unknown' };
   if (failure === 'unknown') draft.issues.push('Request outcome unknown; money and execution remain reserved; no resend');
   else if (failure === 'rejected') draft.issues.push('Request rejected; no model output received; no resend');
   else if (failure === 'invalid') { draft.formatStatus = 'invalid'; draft.issues.push('Provider output was not parseable as JSON; no resend'); }
+  else if (failure === 'truncated') { draft.formatStatus = 'invalid'; draft.issues.push('output_truncated: finish_reason=length; no complete card or resend'); }
   else if (input.bundle.state === 'ready') {
     // An explicitly injected historical fixture can use the frozen v1 contract.
     // A live response always uses the same research-only schema as the new prompt.
     const legacy = origin === 'offline_fixed' && raw !== null && typeof raw === 'object'
       && 'schemaVersion' in raw && raw.schemaVersion === LEGACY_EXTRACTION_VERSION;
+    // Saved fixtures retain v1/v2. New live output uses the compact v3 wire contract.
+    const compact = origin === 'live' || compactExtractionSchema.safeParse(raw).success ? validateCompactExtraction(raw,input.input) : null;
     const parsed = legacy ? extractionSchema.safeParse(raw) : modelExtractionSchema.safeParse(raw);
-    if (!parsed.success) {
+    if (compact) {
+      draft.formatStatus = compact.formatStatus; draft.citationStatus = compact.citationStatus;
+      draft.fieldCompletenessStatus = compact.fieldCompletenessStatus;
+      draft.issues.push(...compact.formatErrors,...compact.citationErrors);
+      if (compact.output && !compact.completeCardAllowed && !compact.contentIssues.length) draft.issues.push('all_research_fields_unknown: no complete card');
+      draft.output = compact.output;
+      draft.state = 'invalid_output';
+    } else if (!parsed.success) {
       draft.formatStatus = 'invalid'; draft.state = 'invalid_output';
       draft.issues = parsed.error.issues.map(item => item.path.join('.') + ': ' + item.code);
     } else {
       draft.output = 'schemaVersion' in parsed.data ? parsed.data : managedExtractionOutput(parsed.data);
       draft.formatStatus = 'valid';
+    }
+    if (draft.output) {
       const ruleIssues = extractionRuleIssues(draft.output);
+      draft.fieldCompletenessStatus = ruleIssues.length ? 'missing_dependencies' : 'required_fields_present';
       draft.issues.push(...ruleIssues.map(item => item.path + ': ' + item.code));
       const references = extractionFields(draft.output).flatMap(item => item.citations);
       // De-duplicate references while preserving exact identity checks for every field.
       const unique = [...new Map(references.map(item => [JSON.stringify(item),item])).values()];
       try {
         await validateAbstractCitations(db,input.bundle.id,unique);
-        draft.citationStatus = 'valid'; draft.state = ruleIssues.length ? 'invalid_output' : 'private_draft';
+        draft.citationStatus = 'valid'; draft.state = ruleIssues.length || compact && !compact.completeCardAllowed ? 'invalid_output' : 'private_draft';
       } catch (error) {
         draft.citationStatus = 'invalid'; draft.state = 'invalid_output';
         draft.issues.push('Citation identity rejected: ' + String(error));
@@ -110,10 +127,12 @@ async function persist(db: Database, input: Awaited<ReturnType<typeof loadInput>
   return draft;
 }
 /** Requires an injected response. Has no provider/worker/retry fallback. */
-export async function extractOfflineBundle(db: Database, bundleId: string, response: FixedExtractionResponse) {
+export async function extractOfflineBundle(db: Database, bundleId: string, response: FixedExtractionResponse,
+  options: {finishReason?:string|null} = {}) {
   const input = await loadInput(db,bundleId);
   if (input.bundle.state !== 'ready') return persist(db,input,null,'offline_fixed',null,null);
-  try { return await persist(db,input,await response({system:input.system,user:input.user}),'offline_fixed',null,null); }
+  try { return await persist(db,input,await response({system:input.system,user:input.user}),'offline_fixed',null,null,
+    options.finishReason === 'length' ? 'truncated' : null); }
   catch (error) {
     if (error instanceof ExtractionOutcomeUnknown) return persist(db,input,null,'offline_fixed',null,null,'unknown');
     throw error;
@@ -136,16 +155,18 @@ export async function executeExtractionTrial(db: Database, trialId: string,
       approvedRequest: {bodyHash:prepared.request.bodyHash,baseUrl:prepared.request.baseUrl!} });
     receiptId = result.receiptId; raw = result.data;
   } catch (error) {
-    const [receipt] = await q<{id:number;status:string}>(db,
-      "SELECT id,status FROM receipts WHERE purpose='ep_abstract_extraction' AND subject=$1 ORDER BY id DESC LIMIT 1",['ep-extraction-trial:' + trialId]);
+    const [receipt] = await q<{id:number;status:string;response:{choices?:Array<{finish_reason?:string}>}}>(db,
+      "SELECT id,status,response FROM receipts WHERE purpose='ep_abstract_extraction' AND subject=$1 ORDER BY id DESC LIMIT 1",['ep-extraction-trial:' + trialId]);
     receiptId = receipt?.id ?? null;
-    const failure = error instanceof ModelOutputError ? 'invalid'
+    const failure = error instanceof ModelOutputError ? receipt?.response?.choices?.[0]?.finish_reason === 'length' ? 'truncated' : 'invalid'
       : error instanceof BudgetExceededError || error instanceof ProviderRejectedError ? 'rejected' : 'unknown';
-    await finishExtractionTrial(db,trialId,failure === 'invalid' ? 'invalid_output' : failure,receiptId);
+    await finishExtractionTrial(db,trialId,failure === 'invalid' || failure === 'truncated' ? 'invalid_output' : failure,receiptId);
     return persist(db,prepared,null,'live',trialId,receiptId,failure);
   }
   // Saving failure leaves in_flight and the existing received receipt. It is never re-sent.
   const draft = await persist(db,prepared,raw,'live',trialId,receiptId);
+  const [completion] = await q<{response:{choices?:Array<{finish_reason?:string}>}}>(db,'SELECT response FROM receipts WHERE id=$1',[receiptId]);
+  draft.truncationStatus = extractionTruncation({finishReason:completion?.response?.choices?.[0]?.finish_reason}).status;
   await finishExtractionTrial(db,trialId,draft.state === 'private_draft' ? 'received' : 'invalid_output',receiptId);
   await markReceiptsCompleted([receiptId]);
   return draft;
@@ -156,9 +177,15 @@ export async function readExtractionDraft(db: Database, id: string): Promise<Ext
     citation_status:ExtractionDraft['citationStatus'];state:DraftState;issues:string[]}>(db,
     'SELECT * FROM ep_research_extraction_drafts WHERE id=$1::uuid',[z.uuid().parse(id)]);
   if (!row) throw new Error('Unknown private extraction draft');
+  const [receipt] = row.receipt_id === null ? [] : await q<{response:{choices?:Array<{finish_reason?:string}>}}>(db,
+    'SELECT response FROM receipts WHERE id=$1',[row.receipt_id]);
+  const fieldIssues = row.parsed_output ? extractionRuleIssues(row.parsed_output) : null;
   return {id:row.id,bundleId:row.bundle_id,origin:row.origin,trialId:row.trial_id,receiptId:row.receipt_id,
     inputManifest:row.input_manifest,output:row.parsed_output ? readStoredExtractionOutput(row.parsed_output) : null,formatStatus:row.format_status,
-    citationStatus:row.citation_status,semanticStatus:'not_performed',state:row.state,issues:row.issues};
+    citationStatus:row.citation_status,semanticStatus:'not_performed',state:row.state,issues:row.issues,
+    fieldCompletenessStatus:fieldIssues ? fieldIssues.length ? 'missing_dependencies' : 'required_fields_present' : 'not_checked',
+    truncationStatus:row.issues.some(item=>item.startsWith('output_truncated:')) ? 'truncated'
+      : extractionTruncation({finishReason:receipt?.response?.choices?.[0]?.finish_reason}).status};
 }
 /** Fixed template and exact private evidence readback; never a prose model call. */
 export async function extractionFieldReport(db: Database, draftId: string) {
@@ -172,18 +199,19 @@ export async function extractionFieldReport(db: Database, draftId: string) {
         evidence.push({reference,identity:'valid' as const,scope:item.scope,label:item.sectionLabel,text:item.text});
       } catch { evidence.push({reference,identity:'invalid' as const,scope:'abstract' as const,label:null,text:null}); }
     }
-    fields.push({...field,evidence,semanticStatus:'not_performed' as const});
+    fields.push({...field,evidence,semanticStatus:'not_evaluated' as const});
   }
   return {draftId:draft.id,origin:draft.origin,state:draft.state,bundleId:draft.bundleId,
     materialId:draft.inputManifest.materialId,materialHash:draft.inputManifest.materialHash,
     providedFragmentIds:draft.inputManifest.providedFragmentIds,formatStatus:draft.formatStatus,
-    citationStatus:draft.citationStatus,semanticStatus:draft.semanticStatus,
+    citationStatus:draft.citationStatus,semanticStatus:'not_evaluated' as const,
+    fieldCompletenessStatus:draft.fieldCompletenessStatus,sourceCoverageStatus:'not_evaluated' as const,truncationStatus:draft.truncationStatus,
     realModelEffectValidated:false,fields,issues:draft.issues};
 }
 export function renderExtractionReport(report: Awaited<ReturnType<typeof extractionFieldReport>>) {
   const escape = (value: unknown) => (typeof value === 'string' ? value : JSON.stringify(value))
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/\|/g,'\\|').replace(/\r?\n/g,'<br>');
-  return `# 私有摘要提取逐字段核对\n\n来源：${report.origin}；草稿：${report.draftId}\n\n材料包：${report.bundleId}；材料版本：${report.materialHash}\n\n格式：${report.formatStatus}；引用身份：${report.citationStatus}；语义核查：尚未进行。\n真实模型效果尚未验证。引用存在不代表原文支持结论。\n\n| 组别 / 字段 | 草稿值 | 片段引用 | 原文回读 | 语义核查 |\n|---|---|---|---|---|\n`
+  return `# 私有摘要提取逐字段核对\n\n来源：${report.origin}；草稿：${report.draftId}\n\n材料包：${report.bundleId}；材料版本：${report.materialHash}\n\n格式：${report.formatStatus}；字段完整性（依赖检查）：${report.fieldCompletenessStatus}；原文覆盖：${report.sourceCoverageStatus}；引用身份：${report.citationStatus}；语义核查：${report.semanticStatus}；截断：${report.truncationStatus}。\n真实模型效果尚未验证。引用存在不代表原文支持结论。\n\n| 组别 / 字段 | 草稿值 | 片段引用 | 原文回读 | 语义核查 |\n|---|---|---|---|---|\n`
     + report.fields.map(field => `| ${escape(field.groupId + ' / ' + field.path)} | ${field.value === null ? ({unknown:'未知',not_reported:'提供摘要未报告',not_applicable:'不适用（引用待核查）'}[field.absenceStatus ?? 'unknown']) : escape(field.value)} | ${field.evidence.map(item => escape(item.reference.fragmentId + ' (' + item.identity + ')')).join('<br>') || '—'} | ${field.evidence.map(item => escape(item.text ?? '引用被拒绝')).join('<br>') || '—'} | 尚未进行 |`).join('\n') + '\n';
 }

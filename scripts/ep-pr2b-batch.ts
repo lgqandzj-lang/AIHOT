@@ -84,8 +84,9 @@ export async function extractionBatchCli(args=process.argv.slice(2)) {
   const {researchDatabase}=await import('../packages/backend/src/research/postgres.ts');
   const {prepareExtractionRequest,executeExtractionTrial}=await import('../packages/backend/src/research/abstract-extraction.ts');
   const {trialPreflight,reserveExtractionTrial}=await import('../packages/backend/src/research/extraction-budget.ts');
-  const {replayExtractionResponse}=await import('../packages/backend/src/research/extraction-replay.ts');
+  const {validateCompactExtraction}=await import('../packages/backend/src/research/extraction-validation.ts');
   const {credential}=await import('../packages/backend/src/config.ts');
+  const {EXTRACTION_OUTPUT_TOKENS}=await import('../packages/backend/src/research/extraction-schema.ts');
   const db=researchDatabase(sql);
   const writeJson=async(name:string,value:unknown)=>{
     const file=await open(path.join(directory,name),'wx');
@@ -110,7 +111,7 @@ export async function extractionBatchCli(args=process.argv.slice(2)) {
         const approval=await readJson(entry.case+'-approval.json');
         if(approval.authorizationKey!==ledger.batchId+':'+entry.case || value.request.bodyHash!==entry.requestHash
           || value.request.baseUrl!=='https://api.deepseek.com' || value.request.modelName!=='deepseek-flash'
-          || value.request.body.max_tokens!==2048 || stableJson(value.request.body.thinking)!==stableJson({type:'disabled'})
+          || plan.outputCap!==EXTRACTION_OUTPUT_TOKENS || value.request.body.max_tokens!==plan.outputCap || stableJson(value.request.body.thinking)!==stableJson({type:'disabled'})
           || stableJson(value.request.body.response_format)!==stableJson({type:'json_object'})) throw new Error('Final material/model/slot configuration changed');
         const check=trialPreflight(value.bundle,value.request,approval);
         if(!check.ready || check.upperBoundMicros!==entry.upperBoundMicros) throw new Error('Case pricing/material authorization no longer matches');
@@ -133,8 +134,10 @@ export async function extractionBatchCli(args=process.argv.slice(2)) {
           const [receipt]=draft.receiptId===null?[]:await sql`SELECT id,status,attempts,retry_policy,usage,cost,currency,cost_basis,response,created_at::text FROM receipts WHERE id=${draft.receiptId}`;
           await writeJson(item.entry.case+'-provider-receipt.json',receipt??null);
           await writeJson(item.entry.case+'-raw-output.json',row?.raw_output??null);
-          const replay=replayExtractionResponse(row?.raw_output??null,item.value.input as any);
-          const structural={...replay,semanticStatus:'not_evaluated',before:replay.before.map(v=>({...v,semanticStatus:'not_evaluated'})),after:replay.after.map(v=>({...v,semanticStatus:'not_evaluated'}))};
+          const checked=validateCompactExtraction(row?.raw_output??null,item.value.input,
+            {finishReason:receipt?.response?.choices?.[0]?.finish_reason,outputTokens:receipt?.usage?.completion_tokens,maxTokens:plan.outputCap});
+          const replay={originalFormatValid:checked.formatStatus==='valid',normalizedFormatValid:checked.formatStatus==='valid'};
+          const structural={...checked,...replay,transformations:[],semanticStatus:'not_evaluated'};
           await writeJson(item.entry.case+'-structure-report.json',structural);
           const fee=estimatedBatchFee(receipt?.usage??null);
           const outcome={case:item.entry.case,trialId:trial!.id,draftId:draft.id,receiptId:draft.receiptId,

@@ -40,3 +40,14 @@ export function fixedModelExtractionOutput(bundle: AbstractMaterialBundle, varia
     : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([key,item])=>[key,convert(item)])) : value;
   return {groups:convert(fixedExtractionOutput(bundle,variant).groups)} as ModelExtractionOutput;
 }
+
+export function fixedCompactExtractionOutput(bundle: AbstractMaterialBundle, variant: ExtractionVariant) {
+  const convert = (node: unknown): unknown => Array.isArray(node) ? node.map(convert)
+    : node && typeof node === 'object' ? Object.fromEntries(Object.entries(node).map(([key,value])=>
+      [key,key === 'citations' ? (value as Array<{fragmentId:string}>).map(item=>item.fragmentId) : convert(value)])) : node;
+  const result = convert(fixedModelExtractionOutput(bundle,variant)) as {groups:Array<{observationTimes:any}>};
+  for(const item of result.groups) if(Array.isArray(item.observationTimes)) for(const observation of item.observationTimes) {
+    observation.outcomeDenominator = {value:null,citations:[],status:'not_reported'};
+  }
+  return result;
+}
