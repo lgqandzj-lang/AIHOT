@@ -1,6 +1,43 @@
-# PR2B 首个提交：私有摘要提取闭环
+# PR2B：私有摘要提取与单次试跑
 
 基线为 PR2A `699f7d3f63b6e83555ac1555715e361f483ea346`；独立分支 `codex/ep-pr2b-extract`，本地工作区 `E:\EPVOICE\AIHOT-PR2B`。PR1、PR2A 的已有提交和分支未改写。本次仅本地提交。
+
+## 当前一次真实试跑结果（2026-10-01）
+
+**真实 DeepSeek 提取已经执行一次，零重试。返回的 JSON 完整，但字段结构被拒绝；尚未形成合格研究卡。** 以下原实现和准备记录保留为历史证据。
+
+- 用户明确不授权向模型发送 PMID `41129023`；该实际材料包的试跑与提取草稿仍为 0。未覆盖其原快照或研究记录，未沿用其答案。
+- 本轮替代材料为 PMID `39820338`、DOI `10.1093/europace/euaf007`，标题 *Early versus late atrial fibrillation recurrence after pulsed field ablation: insights from the admIRE trial*。已核对[出版社页面](https://academic.oup.com/europace/article/27/2/euaf007/7954794)标注的 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)。完整作者、来源、版权声明、许可、核对时间与修改标识保存在私有输出包的 `attribution-license.json`。不声称另有作者或出版社许可。
+- 使用 PubMed 的 Aims、Methods and results、Conclusion 摘要文字，并逐段对照出版社摘要。PubMed 另附的注册号段、关键词、图表、全文与第三方材料未进入输入。建立独立隔离库 `ep_pr2b_admire_test`（39 个迁移）及独立材料/包。
+- 研究提取器使用 `deepseek-flash`、`https://api.deepseek.com`、`thinking={"type":"disabled"}`、`response_format={"type":"json_object"}`、`temperature=0`、`max_tokens=2048`。配置只在被 Git 忽略的本地 `.env`；未修改 Codex 自身设置。没有收费连接测试、批量任务、worker 或自动恢复。
+- 新材料重新计量：摘要 1,657 字符、3 片段；system/user 消息 4,681 字符、4,685 UTF-8 字节。使用固定官方仓库版本 `dba1be0a40aa45a94ad051997016db3960a90277` 的 V4.1 tokenizer 与消息编码，离线计数为 1,408 token，计入 response-format 指令的变体为 1,430 token。依据无扩展 normalizer、无前缀补空格的字节级 BPE，对完整编码及请求体核定保守输入上界 4,829 token；没有把字节统计当成精确 token 用量。
+- 调用前从[官方人民币计价页](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)核对并留存快照、时间与哈希。按高峰、输入全部缓存未命中价格预留：输入 2 CNY/百万 token，输出 8 CNY/百万 token，费用上界 **0.026042 CNY**。用户限额为本轮 2 CNY，绑定同一材料、最终请求与价格合同，没有提高额度。
+- **实际回执：1 次请求，输入 1,430 token（命中 0、未命中 1,430），输出 1,233 token，总计 2,663 token，`finish_reason=stop`。** 使用量与官方离线带格式指令的变体计数一致；输出没有被上限截断。供应商金额字段仍为 `null`。按使用量及高峰价保守估算 **0.012724 CNY**（闲时价估算 0.006362 CNY）；估算及预留均不等于实际账单，不能报告为确切扣费或免费。
+- 严格字段错误有 3 项：`sample.quantity`、`sample.unit` 未按 `{value,citations}` 返回；`imagingMethods` 返回空数组，未知值应为 `null`。数据库保存 `invalid_output`，严格引用检查为 `not_checked`，语义状态仍为 `not_performed`。不能因为 JSON 可解析而标为格式合格。
+- 本地助手回读了模型实际提供引用的 7 个字段，引用身份有效；这不改变整个输出的拒绝状态。逐字段语义对照还发现产品字段把技术类别作为产品、分母和部分观察用途/分层遗漏。完整实际值、原文引用、支持判断与缺失原因位于私有 `field-check.md/json`，仍待人工确认和修改。没有自动改写原始响应、授予审核或公开状态。
+- 在入口中补充结构错误 JSON 的原始字段诊断显示。它保留裸值、空数组、缺失引用与不合法引用，只用于阅读，不自动修复或进入 `parsed_output`。这次既有严格报告和原始回执保留，另从相同回执生成 `raw-field-diagnostic.json`，没有重发请求。
+- 最终本地核对：1 轮、执行计数 1、1 草稿、1 回执、1 个 live attempt、0 条公开记录；原材料包试跑/草稿均 0；所有持久化外发任务开关均关闭。原始材料、响应、授权文件、计价快照和私有日志均不进入 Git。
+
+### 当前可核对的交付物及检查
+
+私有输出目录：`.data/ep-pr2b/live-2d834b26-9a24-49b8-b200-1c598802ada5/`。
+
+| 交付物/检查 | 内容或结果 |
+|---|---|
+| `field-check.md/json` | 实际回执的 12 行逐字段对照，附遗漏项与完整原文片段；区分模型引用和助手补链对照 |
+| `field-report.md/json` | 原始严格拒绝结果及 3 项结构错误，保留未通过状态 |
+| `raw-field-diagnostic.json` | 同一响应的原始字段诊断，不归一化或修改草稿 |
+| `provider-receipt.json`、`execution.json` | 原始供应商响应、用量及唯一执行记录 |
+| `final-state-and-cost.json` | 计数、开关、原材料保全、账单未知及估算口径 |
+| `attribution-license.json` | 完整署名、标题、DOI、来源、许可、时间与修改标识 |
+| `final-request.json`、`input-count-evidence.json`、`official-pricing-evidence.json` | 本次最终参数、固定 tokenizer/编码、计价核验及指纹，不含 API 密钥 |
+| 既有 PR2B 24 项 + 最初新增入口 3 项 | 27/27，exit 0；`.data/ep-pr2b/varipulse-offline-tests.log` |
+| 最终入口检查 | 5/5，exit 0；`.data/ep-pr2b/admire-cli-final-tests.log`；仅合成材料与回环 HTTPS，无外部服务 |
+| 最终完整 workspace 类型检查 | exit 0；`.data/ep-pr2b/admire-typecheck-final.log` |
+
+最终入口检查覆盖禁发与路径边界、结构错误值保全、准备时强制关闭模型、安全授权阻断、回环 HTTPS 一次响应导出和重跑不能再发送。更改未涉及 PR1/PR2A、Web 或原后端回归范围，复用原记录；上文已知失败不改写为通过。
+
+回环 HTTPS 检查首轮 4 个用例通过后，测试清理因试跑外键引用材料包而失败；失败日志保留为 `varipulse-cli-afterhook-failure.log`。清理顺序修正为删除本用例草稿/试跑/回执，再删除本用例记录，并保证数据库关闭。修正后 4/4 通过；补充结构错误诊断值检查后最终 5/5。所有这些请求只到回环 stub，不属于实际供应商调用。
 
 ## 实现及边界
 
@@ -47,7 +84,7 @@
 6. `retry_policy=never` 禁止失败后的再次发送，也阻止旧恢复入口释放该回执。请求不跟随 HTTP 重定向。超时或崩溃留下 `unknown`/`in_flight` 与费用预留，阻止新的试跑进入；需要另行人工核对供应商结果及账单，没有自动退款或重新请求。
 7. 执行计数是保守认领记录，不能等同供应商已收费次数；预留上界也不是实际账单。既有回执仍保留 usage/raw response 机制，实际费用没有被伪填。
 
-计价/计数依据必须在后续具体模型试验前从适用服务规则核对。当前没有选择收费服务，没有已批准模型/额度，也没有调用任何真实模型。测试中的 `provider.example` 和费率仅为合成算法样本，不能作为任何服务的当前价格或用户授权。
+计价/计数依据必须在具体模型试验前从适用服务规则核对。首个提交时没有选择收费服务，没有已批准模型/额度，也没有调用任何真实模型；当前一次试跑见文首。测试中的 `provider.example` 和费率仅为合成算法样本，不能作为任何服务的当前价格或用户授权。
 
 ## 实际运行环境及命令
 
@@ -115,7 +152,7 @@ node --test --test-concurrency=1 --test-timeout=120000 $epRegressionFiles
 
 报告用固定模板生成；没有独立的文案模型调用。固定响应通过验证的是工程闭环，不是模型提取准确率。
 
-## 当前真实调用预检
+## 首个提交的合成材料预检
 
 真实预检文件：`.data/ep-pr2b/live-preflight.json`，基于原合成摘要包实际生成。
 
@@ -133,4 +170,54 @@ node --test --test-concurrency=1 --test-timeout=120000 $epRegressionFiles
 
 真实模型效果尚未验证。未做真实服务的格式/准确率/语义支持试验，没有向模型提供真实论文摘要或其他受限材料；没有实时计价核验、真实 token 计数或供应商账单对账。
 
-下一项最小工作是取得具体模型、服务地址、金额额度和材料处理依据后，对上述三个已准备的合成包设计逐次批准的真实试验。首次只能对获批的一个包发一次请求，先核对该模型最终参数、官方适用价、准确的输入上界及全部收费项，再预留额度。其余材料不自动执行。本提交没有自动开始此工作。
+该预检属于首个提交的合成材料工程验证，不是 VARIPULSE 实际模型试验。后续单次试跑改用下节已取得的真实摘要，不自动执行其他材料。
+
+## 2026-10-01：PMID 41129023 历史准备（未获发送许可）
+
+先核对本地进度：`codex/ep-pr2b-extract` 已有 `e7183b99d8eea12495b25111d78811d00152de39`，父提交为用户指定的 `699f7d3f63b6e83555ac1555715e361f483ea346`，开始时工作区干净。复用现有模块，新增一个可执行入口和最终五个有费用/隐私意义的入口测试，没有重写提取器、材料包、回执或预算模块。该节准备随后被用户明确替换，不能当作当前获准材料。
+
+### 已准备的实际输入与当前结果
+
+- 使用此前已经取得的 PubMed 摘要（PMID `41129023`）。摘要为 1,871 字符，实际材料包提供 4 个片段；没有抓取全文或任何新材料。
+- 原快照只读；为本次准备创建隔离库 `ep_pr2b_varipulse_test`，39 个迁移。核对源快照指纹后复制同一版本，材料及研究记录仍为私有。
+- 提供给模型的 system/user 消息序列化为 5,433 字符、5,457 UTF-8 字节。这是字符/字节统计，尚无已核对的 token 上界。
+- 原文与输入文件保留在 `.data/ep-pr2b/live-<bundle-id>/provided-input.json`；预检在同目录 `preflight.json`。真实摘要、运行日志及原始响应不进入 Git。
+- **工程链路已准备，模型效果尚未验证。** 当前 `ready=false`，实际模型请求 0，真实材料包的试跑记录、提取草稿和回执均为 0；未得到可逐字段核对的实际模型输出。
+- 同目录 `preparation-status.md` 明确列出“字段 / 模型输出 / 原文引用 / 是否支持 / 错误或缺失原因”，各字段当前标注“未调用，无输出 / 未评估”，不以合成响应或手填答案代替结果。真正的 `field-report.md` 留给实际调用结果，后续准备命令不会覆盖已有结果。
+
+### 可执行入口
+
+```powershell
+# 只准备输入/预检；即使继承 MODEL_CALLS_ENABLED=true，也强制关闭模型调用。
+node --env-file-if-exists=.env scripts/ep-pr2b-extract-one.ts prepare --material '<material-id>'
+
+# 对既有包重新检查；只有显式选择模型时才构造该模型的最终请求。
+node --env-file-if-exists=.env scripts/ep-pr2b-extract-one.ts prepare --bundle '<bundle-id>' --model '<model-key>' --approval '.data/ep-pr2b/approval.json'
+
+# 仅在材料、服务、价格和额度已获授权且预检通过后运行一次。
+# 还要求当前子进程显式 MODEL_CALLS_ENABLED=true；不会自行开启安全阀。
+node --env-file-if-exists=.env scripts/ep-pr2b-extract-one.ts run --bundle '<bundle-id>' --approval '.data/ep-pr2b/approval.json' --execute-once
+```
+
+入口只接受回环地址的隔离 `_test`/`_ci` 数据库，拒绝生产环境。授权文件只能位于忽略的 `.data/`。`prepare` 不创建回执、试跑预留或模型草稿；`run` 复用现有金额预留、持久化认领和 `retry_policy=never`。执行结果写入同目录的 `field-report.md/json`、`provider-receipt.json`、`execution.json`，原始响应仍为私有。引用身份和语义判断分别记录；不会自动授予核查或公开状态。
+
+### 本次实际验证
+
+| 检查 | 实际结果 | 本地证据 |
+|---|---|---|
+| 既有 PR2B 24 项 + 新入口 3 项 | 27/27，exit 0；全部为合成材料或回环 HTTP stub | `.data/ep-pr2b/varipulse-offline-tests.log` |
+| 完整 workspace 类型检查 | exit 0，包含新脚本与测试 | `.data/ep-pr2b/varipulse-typecheck.log` |
+| 实际摘要准备入口 | exit 0；4 个片段，零请求，预检阻断 | `.data/ep-pr2b/varipulse-preflight.log` |
+| 数据库状态核对 | 真实包试跑/草稿/回执均 0；canonical `draft`、公开许可 false | `.data/ep-pr2b/varipulse-database-check.json` |
+| 当前模型配置只读核对 | 根目录无 `.env`，未配置 credentials 目录；5 类模型密钥与 API 地址均缺失，没有输出密钥 | `.data/ep-pr2b/current-config-audit.json` |
+
+测试重点是：准备命令不能因继承开关而发送；未授权的运行不能创建试跑或回执；私有输入不变成虚构模型输出；并继续验证既有计价、引用、未知、跨组、超时和零重试契约。PR1/PR2A、Web 和原后端大范围回归复用前序提交的验证记录，未重复运行；其已知失败和未运行项仍按上文报告。未执行真实模型、准确率或人工语义核查。
+
+### 真实试跑所缺的条件与费用口径
+
+1. 明确模型服务、模型名和 API 地址，并把 API 密钥配置在本地；不要在聊天或提交中提供密钥。
+2. 明确允许向该服务发送本次摘要、仅形成私有研究草稿的处理依据；已取得材料不是该授权。
+3. 明确本次获准的最高金额和币种。
+4. 服务确定后核对官方适用价格、最终请求指纹、准确的输入 token 上界，以及输出/推理和其他收费项。提取器请求 2,048 输出 token，但最终 cap 仍需结合实际模型预设确认。
+
+该准备阶段服务、价格和 token 上界均缺失，**当时费用上界无法核定**，未以其他服务的示例价格估算。该材料包的真实请求次数与调用用量仍为 0，没有供应商模型回执。用户之后明确不授权发送此篇摘要，当前唯一真实试跑已经改用文首的独立替代材料。缺项清单不是要求用户再次授权已完成的一次调用。
