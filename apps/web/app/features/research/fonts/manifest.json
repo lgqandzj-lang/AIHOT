@@ -1,0 +1,10 @@
+{
+  "source": "https://github.com/google/fonts/tree/main/ofl/notosanssc",
+  "source_sha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+  "artifact_sha256": "22c1e5f1afda110f79d01b2087d6579b8f8c515d390814800c339b5de41d76b8",
+  "glyph_codepoints": 297,
+  "bytes": 80116,
+  "missing_decorative_characters": [],
+  "fonttools": "4.66.1",
+  "brotli": "1.2.0"
+}
