@@ -2,9 +2,97 @@
 
 基线为 PR2A `699f7d3f63b6e83555ac1555715e361f483ea346`；独立分支 `codex/ep-pr2b-extract`，本地工作区 `E:\EPVOICE\AIHOT-PR2B`。PR1、PR2A 的已有提交和分支未改写。本次仅本地提交。
 
+## 2026-10-01 修复：原始响应离线回放、输出格式对齐、证据缺失保留
+
+本修复基于干净的本地提交 `8efd6494c079ef2ce941f9ac31e2450bd3ad1cea`。真实请求新增 **0**，原授权已消耗；本修复不续用授权、不更换模型、不处理全文、不改前端、不推送或部署。
+
+### 先复现的结论
+
+修改前直接读取保存的最终请求、供应商原始响应和原始失败记录，调用冻结的 v1 schema 离线复现原来的 3 个错误。此路径没有调用 `chatJson`、预算认领或任何发送入口。
+
+实际配置为 `response_format={"type":"json_object"}`、最终 `max_tokens=2048`、`thinking={"type":"disabled"}`，供应商返回 `finish_reason=stop`，内容可解析为 JSON。供应商没有报告 `length` 终止；不能凭输出 token 数判定没有截断，也不能凭 `stop` 判定内容完整。离线 CLI 在 `length` 时明确记录长度终止。
+
+原提示词与 v1 schema 的顶层字段及引用意图一致，但提示词仅有手写简写：`sample({quantity,unit,denominator})`、`imagingMethods(array)` 没有逐层给出成员包装、类型及数组约束；也要求模型输出程序版本。原配置是 JSON object 模式，没有供应商端的严格 JSON Schema 保证。
+
+### 当前约定和规范化范围
+
+- `modelExtractionSchema` 是新模型输出的唯一结构定义；提示词直接嵌入其生成的 JSON Schema。内容规则共用 `EXTRACTION_RULES`。新 live 响应仅接受 `groups` 及其研究字段/引用；版本由程序写入 `ep-abstract-extract-v2`，权限、处理记录和发布状态不能由模型写入。模型预设、服务及输出 cap 没有更改。
+- 已知值：`{value,citations:[...]}`，引用至少一个；已知集合使用非空数组。未知：`{value:null,citations:[],status:"unknown"}`；提供摘要未报告：`{value:null,citations:[],status:"not_reported"}`；明确不适用：`{value:null,citations:[...],status:"not_applicable"}`。不适用须有明确依据；“摘要未报告”不能代表“实际没有使用”。
+- 技术类别不能作为具体产品；当前确定性规则拦截 PFA、RF、pulsed field ablation 等类别名称，其他产品归属仍需语义核对。已知数量要求同组的单位和分母口径；每个观察时间及用途成对保存。没有自动产品识别、补口径或补用途。
+- 冻结 v1 schema 只供历史记录读取、原始失败复现和明确注入的历史 fixture；新 live 响应不使用 v1 的默认/缺省规则。v2 验证保留模型文本原值，没有隐式 trim。
+- 独立纯离线模块只记录无歧义转换：旧程序版本移出模型数据；旧 `null` 保留为显式 unknown；裸字符串/数字包入 `{value,citations:[]}`；明确提供的 `citation` 改名为 `citations`。每条保存 before/after、规则及 `evidenceAdded=false`。裸值包装后仍缺引用，校验继续拒绝；不生成引用。空数组保持原样，不解释为未使用。
+- 原始请求、响应、失败记录只读。输出写入全新的 `replay-*` 私有目录，禁止复用目录。对已有执行再次 prepare 会写入独立 preparation 子目录；已有结果的 run 在写入前被阻断。没有追加模型请求或覆盖原始失败。
+
+### 此次私有响应的修复前后对照
+
+下表仅列结构和资格，不在仓库中复制实际论文值、原文或完整响应。完整 12 行逐字段结构/引用/旧助手对照在私有交付物。
+
+| 字段 | 修复前结构/问题 | 离线规范化后 | 仍不合格或待核对的原因 |
+|---|---|---|---|
+| 组别标签 | 引用包装，身份可匹配 | 原值/引用保留 | 语义尚未人工批准 |
+| 产品及角色 | 引用包装，但技术类别进入具体产品字段 | 原值保留，另报内容规则错误 | 具体产品没有得到支持，不补产品名 |
+| 研究对象 | 引用包装，身份可匹配 | 原值/引用保留 | 语义尚未人工批准 |
+| 样本数量 | 裸 number，格式错误且缺引用 | 包装 value，citations 仍为空 | 仍被拒绝；助手原文补链不能作为模型引用 |
+| 数量单位 | 裸 string，格式错误且缺引用 | 包装 value，citations 仍为空 | 仍被拒绝；不自动复制其他字段引用 |
+| 分母口径 | null，存在内容遗漏 | 显式 unknown | 数量已给出但口径缺失，仍被内容规则阻断 |
+| 影像方式 | 空数组，格式错误且含义有歧义 | 空数组原样保留 | 未自动选择 unknown、not_reported 或 not_applicable |
+| 射线策略 | null，证据不足 | 显式 unknown | 保留未知，不推断射线使用情况 |
+| 已返回的观察时间/用途配对 | 成对引用包装 | 原值和配对保留 | 身份有效不等于结论得到支持；其他观察/分层信息遗漏另列 |
+
+此次只有 5 条转换，两个非空字段仍缺引用；规范化输出结构仍被拒绝，`normalizedDraft=null`、`state=invalid_output`、`qualified=false`。旧助手对原文的支持观察和 3 项遗漏单独保存，不进入 candidate，不替代模型引用或人类确认。原试跑仍为 1 次执行、1 张回执、1 个 invalid_output 草稿、0 条公开记录，语义状态仍为 `not_performed`。9 个原始文件的 SHA-256 与修改前一致。
+
+### 费用与私有交付物
+
+新费用记录分开保留 `cost_estimated` 与 `cost_actual`：按调用前官方计价快照和实际 usage，峰时估算 0.012724 CNY、闲时估算 0.006362 CNY；`cost_actual=null`，没有供应商实际扣款金额。价格快照核对时间为 `2026-10-01T01:02:17.406Z`，没有在本修复中更新价格或触发外部服务。
+
+请求/响应模型名均为 `deepseek-flash`。回执建立时间为 `2026-10-01 09:03:26.825056+08`（发送前预留的数据库时间）；供应商响应 `created` 为 `2026-10-01T01:03:26.000Z`。费用记录同时写入计价 URL、核对时间、回放核对时间与时间依据，不把预留、估算或响应时间当作实际账单/TCP 发送时刻。
+
+| 私有路径 | 内容 |
+|---|---|
+| `.data/ep-pr2b/offline-replay-8efd649/baseline.json` | 修改前复现、原请求配置、原始 9 文件哈希 |
+| 同目录 `ledger-before.json` / `ledger-after.json` | 只读数据库核对；原次数、失败状态和引用/语义状态保全 |
+| `.data/ep-pr2b/replay-private-8efd649-delivery/comparison.md` | 完整逐字段期望/实际结构、格式、引用、内容遗漏与资格限制 |
+| 同目录 `replay.json` / `normalized-candidate.json` / `transformations.json` | 原始诊断、独立规范化候选、每项转换；没有合格草稿 |
+| 同目录 `historical-source-comparison.json` | 旧助手对照、原文补链及遗漏；不作为模型证据或人工批准 |
+| 同目录 `cost-record.json` | 历史费用估算、实际扣款未知、模型名称及时间依据 |
+
+`scripts/ep-pr2b-replay.ts` 只接受 `.data/` 内保存的 JSON，核对最终请求哈希及材料清单；不加载 `.env`、credential、DB、provider 或 trial 执行模块。它成功退出表示回放成功，输出仍可是 invalid_output。
+
+```powershell
+node scripts/ep-pr2b-replay.ts `
+  --request '.data/<saved>/final-request.json' `
+  --receipt '.data/<saved>/provider-receipt.json' `
+  --input '.data/<saved>/provided-input.json' `
+  --failure '.data/<saved>/field-report.json' `
+  --pricing '.data/<saved>/official-pricing-evidence.json' `
+  --out-dir '.data/ep-pr2b/replay-fresh-directory'
+```
+
+可选 `--receipt-meta` 读取只读账本快照，`--review-notes` 附上历史助手对照。两者只生成私有记录，不触发模型或确认字段。
+
+### 本修复的验证及未执行项
+
+| 检查 | 当前结果 | 私有日志 |
+|---|---|---|
+| 原始实际响应离线回放 | exit 0；提取仍 invalid_output，新模型请求 0，原文件未变 | `replay-private-8efd649-delivery/` |
+| PR2B 单元/数据库及新回放验收 | 32/32，exit 0（原 7 单元、原 11 PG、新 1 PG、新 13 回放） | `replay-tests-delivery.log` |
+| 既有入口验收 | 5/5，exit 0；其中一个是完全合成的回环 HTTPS 响应，没有调用真实供应商 | `replay-existing-cli.log` |
+| PR1 验收 | 55/55，exit 0，包含 PostgreSQL/EXPLAIN | `replay-pr1.log`、`replay-pr1/` |
+| PR2A 验收 | 26/26，exit 0 | `replay-pr2a.log` |
+| 完整 workspace 类型检查 | exit 0 | `replay-typecheck-delivery.log` |
+| Web 构建（无前端源改动） | exit 0 | `replay-web-build.log` |
+
+新回放验收使用作者编写的合成 fixture，覆盖裸值/错包装、空数组/缺失状态、技术冒充产品、缺/假/不支持结论的真实引用、缺分母、缺用途、规则变化仍零发送、原结果/输出目录不可覆盖及费用未知。真实响应 fixture 和日志均未进入 Git。
+
+初次类型检查暴露冻结 v1 schema 的 Zod unwrap 顺序错误；修正后完整类型检查与上述验收通过。初次失败日志 `replay-typecheck-initial.log` 保留。
+
+本修复未执行：真实模型、新提示词效果/准确率试验、人工语义批准、供应商账单核对、原 6 个独立 HTTP/回执测试及 7 个旧回执测试、完整 `npm test`、旧 36 文件后端回归、Web 测试、站点 smoke、迁移升级或离线示例重写。共享 provider/预算/回执代码未改；其前序验证与已知失败见后文，不能当作本修复重新通过。未启动 worker、批量处理、推送或部署。
+
+下一次受控试验只准备了 [执行清单](ep-pr2b-next-trial.md)，本轮不实际执行。离线和合成结果只验证解析/检查/保全行为，**不能证明新提示词改善了真实模型效果**。
+
 ## 当前一次真实试跑结果（2026-10-01）
 
-**真实 DeepSeek 提取已经执行一次，零重试。返回的 JSON 完整，但字段结构被拒绝；尚未形成合格研究卡。** 以下原实现和准备记录保留为历史证据。
+**真实 DeepSeek 提取已经执行一次，零重试。返回的 JSON 可解析，但字段结构被拒绝；尚未形成合格研究卡。** 以下原实现和准备记录保留为历史证据。
 
 - 用户明确不授权向模型发送 PMID `41129023`；该实际材料包的试跑与提取草稿仍为 0。未覆盖其原快照或研究记录，未沿用其答案。
 - 本轮替代材料为 PMID `39820338`、DOI `10.1093/europace/euaf007`，标题 *Early versus late atrial fibrillation recurrence after pulsed field ablation: insights from the admIRE trial*。已核对[出版社页面](https://academic.oup.com/europace/article/27/2/euaf007/7954794)标注的 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)。完整作者、来源、版权声明、许可、核对时间与修改标识保存在私有输出包的 `attribution-license.json`。不声称另有作者或出版社许可。
@@ -12,7 +100,7 @@
 - 研究提取器使用 `deepseek-flash`、`https://api.deepseek.com`、`thinking={"type":"disabled"}`、`response_format={"type":"json_object"}`、`temperature=0`、`max_tokens=2048`。配置只在被 Git 忽略的本地 `.env`；未修改 Codex 自身设置。没有收费连接测试、批量任务、worker 或自动恢复。
 - 新材料重新计量：摘要 1,657 字符、3 片段；system/user 消息 4,681 字符、4,685 UTF-8 字节。使用固定官方仓库版本 `dba1be0a40aa45a94ad051997016db3960a90277` 的 V4.1 tokenizer 与消息编码，离线计数为 1,408 token，计入 response-format 指令的变体为 1,430 token。依据无扩展 normalizer、无前缀补空格的字节级 BPE，对完整编码及请求体核定保守输入上界 4,829 token；没有把字节统计当成精确 token 用量。
 - 调用前从[官方人民币计价页](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)核对并留存快照、时间与哈希。按高峰、输入全部缓存未命中价格预留：输入 2 CNY/百万 token，输出 8 CNY/百万 token，费用上界 **0.026042 CNY**。用户限额为本轮 2 CNY，绑定同一材料、最终请求与价格合同，没有提高额度。
-- **实际回执：1 次请求，输入 1,430 token（命中 0、未命中 1,430），输出 1,233 token，总计 2,663 token，`finish_reason=stop`。** 使用量与官方离线带格式指令的变体计数一致；输出没有被上限截断。供应商金额字段仍为 `null`。按使用量及高峰价保守估算 **0.012724 CNY**（闲时价估算 0.006362 CNY）；估算及预留均不等于实际账单，不能报告为确切扣费或免费。
+- **实际回执：1 次请求，输入 1,430 token（命中 0、未命中 1,430），输出 1,233 token，总计 2,663 token，`finish_reason=stop`。** 使用量与官方离线带格式指令的变体计数一致；供应商没有返回长度终止标志，内容完整性另行检查。供应商金额字段仍为 `null`。按使用量及高峰价保守估算 **0.012724 CNY**（闲时价估算 0.006362 CNY）；估算及预留均不等于实际账单，不能报告为确切扣费或免费。
 - 严格字段错误有 3 项：`sample.quantity`、`sample.unit` 未按 `{value,citations}` 返回；`imagingMethods` 返回空数组，未知值应为 `null`。数据库保存 `invalid_output`，严格引用检查为 `not_checked`，语义状态仍为 `not_performed`。不能因为 JSON 可解析而标为格式合格。
 - 本地助手回读了模型实际提供引用的 7 个字段，引用身份有效；这不改变整个输出的拒绝状态。逐字段语义对照还发现产品字段把技术类别作为产品、分母和部分观察用途/分层遗漏。完整实际值、原文引用、支持判断与缺失原因位于私有 `field-check.md/json`，仍待人工确认和修改。没有自动改写原始响应、授予审核或公开状态。
 - 在入口中补充结构错误 JSON 的原始字段诊断显示。它保留裸值、空数组、缺失引用与不合法引用，只用于阅读，不自动修复或进入 `parsed_output`。这次既有严格报告和原始回执保留，另从相同回执生成 `raw-field-diagnostic.json`，没有重发请求。
@@ -39,7 +127,7 @@
 
 回环 HTTPS 检查首轮 4 个用例通过后，测试清理因试跑外键引用材料包而失败；失败日志保留为 `varipulse-cli-afterhook-failure.log`。清理顺序修正为删除本用例草稿/试跑/回执，再删除本用例记录，并保证数据库关闭。修正后 4/4 通过；补充结构错误诊断值检查后最终 5/5。所有这些请求只到回环 stub，不属于实际供应商调用。
 
-## 实现及边界
+## 实现及边界（首个 v1 提交记录）
 
 - 从 PR2A 数据库中读取已经持久化的材料包，并验证材料内容指纹；模型输入记录准确的材料 ID、版本指纹、切分规则、标题与实际提供的片段。
 - 只提取产品角色、研究对象、样本数量/单位/分母口径、影像方式、射线策略、观察时间及用途。分组保存，未知为 `null`。模型必须为每个非空值提供片段身份；不同组别不进行程序合并。

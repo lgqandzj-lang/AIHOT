@@ -2,7 +2,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { assertEpTestDatabase } from '../tests/fixtures/ep-test-safety.ts';
-import { extractionMetadata, fixedExtractionOutput } from '../tests/fixtures/ep-extraction.ts';
+import { extractionMetadata, fixedModelExtractionOutput } from '../tests/fixtures/ep-extraction.ts';
 import { importLiteratureMetadata } from '../packages/backend/src/research/metadata-import.ts';
 import { buildAbstractMaterialBundle } from '../packages/backend/src/research/abstract-evidence.ts';
 assertEpTestDatabase(process.env.DATABASE_URL);
@@ -22,7 +22,7 @@ try {
     // The fixed answer stays inside the injected callback, never in its input.
     const draft = await extractOfflineBundle(db,bundle.id,async input => {
       if (variant === 'ablated' && /without fluoroscopy|zero[- ]fluoro|no radiation/i.test(input.user)) throw new Error('Ablated input leaks key evidence');
-      return fixedExtractionOutput(bundle,variant);
+      return fixedModelExtractionOutput(bundle,variant);
     });
     const report = await extractionFieldReport(db,draft.id);
     await writeFile(path.join(directory,'field-report.' + variant + '.md'),renderExtractionReport(report),'utf8');

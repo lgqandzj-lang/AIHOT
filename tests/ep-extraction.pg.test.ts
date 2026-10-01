@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { assertEpTestDatabase } from './fixtures/ep-test-safety.ts';
-import { extractionMetadata, fixedExtractionOutput } from './fixtures/ep-extraction.ts';
+import { extractionMetadata, fixedExtractionOutput, fixedModelExtractionOutput } from './fixtures/ep-extraction.ts';
 import type { ExtractionVariant } from './fixtures/ep-extraction.ts';
 import { abstractMetadata } from './fixtures/ep-abstract.ts';
 import { record } from './fixtures/ep-research.ts';
@@ -75,6 +75,25 @@ test('one private bundle produces a persisted draft and per-field readback; no m
   assert.equal(hits,1); assert.ok(report.fields.length > 10);
   assert.ok(report.fields.every(field => field.semanticStatus === 'not_performed' && field.evidence.every(item => item.identity === 'valid')));
   assert.ok(renderExtractionReport(report).includes('真实模型效果尚未验证'));
+});
+test('research-only v2 response persists a program-managed version; evidence and incomplete claims remain separate',async()=>{
+  const {bundle}=await save('control');
+  const response=fixedModelExtractionOutput(bundle,'control');
+  assert.ok(!Object.hasOwn(response,'schemaVersion'));
+  const draft=await extractOfflineBundle(db,bundle.id,async()=>response);
+  assert.equal(draft.output!.schemaVersion,'ep-abstract-extract-v2');assert.equal(draft.state,'private_draft');
+  const report=await extractionFieldReport(db,draft.id);
+  assert.equal(report.fields.find(item=>item.path==='radiationStrategy')!.absenceStatus,'unknown');
+  assert.equal(report.semanticStatus,'not_performed');
+  const bad=structuredClone(response) as any;
+  bad.groups[0].productRoles[0].value.product='PFA';
+  bad.groups[0].sample.denominator={value:null,citations:[],status:'unknown'};
+  const invalid=await extractOfflineBundle(db,bundle.id,async()=>bad);
+  assert.equal(invalid.formatStatus,'valid');assert.equal(invalid.citationStatus,'valid');assert.equal(invalid.state,'invalid_output');
+  assert.ok(invalid.issues.some(item=>item.includes('technology_is_not_product')));
+  assert.ok(invalid.issues.some(item=>item.includes('sample_scope_missing')));
+  const controls=await extractOfflineBundle(db,bundle.id,async()=>({...response,schemaVersion:'ep-abstract-extract-v2',publicationState:'published'}));
+  assert.equal(controls.formatStatus,'invalid');
 });
 test('missing fields remain unknown and an empty abstract never invokes injected response',async () => {
   const {bundle} = await save('control');

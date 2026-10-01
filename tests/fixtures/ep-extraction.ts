@@ -2,7 +2,7 @@
 import { abstractMetadata } from './ep-abstract.ts';
 import { citationForAbstractFragment } from '../../packages/backend/src/research/abstract-evidence.ts';
 import type { AbstractMaterialBundle, AbstractFragment } from '../../packages/backend/src/research/abstract-evidence.ts';
-import type { ExtractionOutput } from '../../packages/backend/src/research/extraction-schema.ts';
+import type { LegacyExtractionOutput, ModelExtractionOutput } from '../../packages/backend/src/research/extraction-schema.ts';
 
 export type ExtractionVariant = 'original'|'ablated'|'control';
 const groupA = 'Group A included 12 adult participants; the sample denominator was all 12 enrolled participants. SYNTH-DEVICE was the evaluated study device. Echocardiography guided the procedure. Safety was observed at 30 days.';
@@ -15,7 +15,7 @@ export function extractionMetadata(variant: ExtractionVariant, doi = '10.9999/ep
     {title:'[SYNTHETIC] Study summaries',abstractSections:sections});
 }
 // Evaluation/fixed response only. This function is never imported by prompt or provider code.
-export function fixedExtractionOutput(bundle: AbstractMaterialBundle, variant: ExtractionVariant): ExtractionOutput {
+export function fixedExtractionOutput(bundle: AbstractMaterialBundle, variant: ExtractionVariant): LegacyExtractionOutput {
   const source = (label: string) => bundle.fragments.find(item => item.sectionLabel === label)!;
   const value = <T>(item: AbstractFragment, field: T) => ({value:field,citations:[citationForAbstractFragment(item)]});
   const make = (label: string, index: number, count: number, subject: string, product: string, role: string,
@@ -31,4 +31,12 @@ export function fixedExtractionOutput(bundle: AbstractMaterialBundle, variant: E
     ? [make('Group C',1,5,'animals','SYNTH-MARKER','positioning tool','CT','48 hours','device position',null)]
     : [make('Group A',1,12,'adult participants','SYNTH-DEVICE','evaluated study device','echocardiography','30 days','safety',variant === 'original' ? 'without fluoroscopy' : null),
        make('Group B',2,8,'adult participants','SYNTH-CONTROL','comparison device','X-ray fluoroscopy','7 days','feasibility','reduced fluoroscopy use')]};
+}
+
+// Authored synthetic response for the current wire contract; no program metadata.
+export function fixedModelExtractionOutput(bundle: AbstractMaterialBundle, variant: ExtractionVariant): ModelExtractionOutput {
+  const convert = (value: unknown): unknown => value === null ? {value:null,citations:[],status:'unknown'}
+    : Array.isArray(value) ? value.map(convert)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([key,item])=>[key,convert(item)])) : value;
+  return {groups:convert(fixedExtractionOutput(bundle,variant).groups)} as ModelExtractionOutput;
 }

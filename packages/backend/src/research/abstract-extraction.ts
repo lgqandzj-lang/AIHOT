@@ -6,7 +6,9 @@ import { readAbstractMaterialBundle, readAbstractFragment, validateAbstractCitat
 import { chatJson, prepareChatJsonRequest, markReceiptsCompleted, ModelOutputError } from '../providers/llm.ts';
 import { BudgetExceededError, ProviderRejectedError } from '../providers/receipts.ts';
 import { config } from '../config.ts';
-import { extractionSchema, extractionFields, extractionPrompt, EXTRACTION_PROMPT_VERSION, EXTRACTION_OUTPUT_TOKENS } from './extraction-schema.ts';
+import { extractionSchema, modelExtractionSchema, managedExtractionOutput, readStoredExtractionOutput,
+  extractionRuleIssues, extractionFields, extractionPrompt, LEGACY_EXTRACTION_VERSION,
+  EXTRACTION_PROMPT_VERSION, EXTRACTION_OUTPUT_TOKENS } from './extraction-schema.ts';
 import type { ExtractionOutput } from './extraction-schema.ts';
 import { trialPreflight, loadExtractionTrial, claimExtractionTrial, finishExtractionTrial } from './extraction-budget.ts';
 
@@ -72,18 +74,25 @@ async function persist(db: Database, input: Awaited<ReturnType<typeof loadInput>
   else if (failure === 'rejected') draft.issues.push('Request rejected; no model output received; no resend');
   else if (failure === 'invalid') { draft.formatStatus = 'invalid'; draft.issues.push('Provider output was not parseable as JSON; no resend'); }
   else if (input.bundle.state === 'ready') {
-    const parsed = extractionSchema.safeParse(raw);
+    // An explicitly injected historical fixture can use the frozen v1 contract.
+    // A live response always uses the same research-only schema as the new prompt.
+    const legacy = origin === 'offline_fixed' && raw !== null && typeof raw === 'object'
+      && 'schemaVersion' in raw && raw.schemaVersion === LEGACY_EXTRACTION_VERSION;
+    const parsed = legacy ? extractionSchema.safeParse(raw) : modelExtractionSchema.safeParse(raw);
     if (!parsed.success) {
       draft.formatStatus = 'invalid'; draft.state = 'invalid_output';
       draft.issues = parsed.error.issues.map(item => item.path.join('.') + ': ' + item.code);
     } else {
-      draft.output = parsed.data; draft.formatStatus = 'valid';
-      const references = extractionFields(parsed.data).flatMap(item => item.citations);
+      draft.output = 'schemaVersion' in parsed.data ? parsed.data : managedExtractionOutput(parsed.data);
+      draft.formatStatus = 'valid';
+      const ruleIssues = extractionRuleIssues(draft.output);
+      draft.issues.push(...ruleIssues.map(item => item.path + ': ' + item.code));
+      const references = extractionFields(draft.output).flatMap(item => item.citations);
       // De-duplicate references while preserving exact identity checks for every field.
       const unique = [...new Map(references.map(item => [JSON.stringify(item),item])).values()];
       try {
         await validateAbstractCitations(db,input.bundle.id,unique);
-        draft.citationStatus = 'valid'; draft.state = 'private_draft';
+        draft.citationStatus = 'valid'; draft.state = ruleIssues.length ? 'invalid_output' : 'private_draft';
       } catch (error) {
         draft.citationStatus = 'invalid'; draft.state = 'invalid_output';
         draft.issues.push('Citation identity rejected: ' + String(error));
@@ -148,7 +157,7 @@ export async function readExtractionDraft(db: Database, id: string): Promise<Ext
     'SELECT * FROM ep_research_extraction_drafts WHERE id=$1::uuid',[z.uuid().parse(id)]);
   if (!row) throw new Error('Unknown private extraction draft');
   return {id:row.id,bundleId:row.bundle_id,origin:row.origin,trialId:row.trial_id,receiptId:row.receipt_id,
-    inputManifest:row.input_manifest,output:row.parsed_output ? extractionSchema.parse(row.parsed_output) : null,formatStatus:row.format_status,
+    inputManifest:row.input_manifest,output:row.parsed_output ? readStoredExtractionOutput(row.parsed_output) : null,formatStatus:row.format_status,
     citationStatus:row.citation_status,semanticStatus:'not_performed',state:row.state,issues:row.issues};
 }
 /** Fixed template and exact private evidence readback; never a prose model call. */
@@ -176,5 +185,5 @@ export function renderExtractionReport(report: Awaited<ReturnType<typeof extract
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/\|/g,'\\|').replace(/\r?\n/g,'<br>');
   return `# 私有摘要提取逐字段核对\n\n来源：${report.origin}；草稿：${report.draftId}\n\n材料包：${report.bundleId}；材料版本：${report.materialHash}\n\n格式：${report.formatStatus}；引用身份：${report.citationStatus}；语义核查：尚未进行。\n真实模型效果尚未验证。引用存在不代表原文支持结论。\n\n| 组别 / 字段 | 草稿值 | 片段引用 | 原文回读 | 语义核查 |\n|---|---|---|---|---|\n`
-    + report.fields.map(field => `| ${escape(field.groupId + ' / ' + field.path)} | ${field.value === null ? '未知' : escape(field.value)} | ${field.evidence.map(item => escape(item.reference.fragmentId + ' (' + item.identity + ')')).join('<br>') || '—'} | ${field.evidence.map(item => escape(item.text ?? '引用被拒绝')).join('<br>') || '—'} | 尚未进行 |`).join('\n') + '\n';
+    + report.fields.map(field => `| ${escape(field.groupId + ' / ' + field.path)} | ${field.value === null ? ({unknown:'未知',not_reported:'提供摘要未报告',not_applicable:'不适用（引用待核查）'}[field.absenceStatus ?? 'unknown']) : escape(field.value)} | ${field.evidence.map(item => escape(item.reference.fragmentId + ' (' + item.identity + ')')).join('<br>') || '—'} | ${field.evidence.map(item => escape(item.text ?? '引用被拒绝')).join('<br>') || '—'} | 尚未进行 |`).join('\n') + '\n';
 }

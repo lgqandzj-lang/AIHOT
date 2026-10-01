@@ -3,6 +3,17 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { randomUUID } from 'node:crypto';
+
+/** A saved execution is immutable; later preparation gets a separate directory. */
+export async function extractionOutputDirectory(root: string, bundleId: string, mode: 'prepare'|'run') {
+  const directory = path.resolve(root,'.data/ep-pr2b','live-' + bundleId);
+  let completed = false;
+  try { await readFile(path.join(directory,'execution.json'),'utf8'); completed = true; }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+  if (completed && mode === 'run') throw new Error('Saved execution exists; original authorization is consumed.');
+  return completed ? path.join(directory,'preparation-' + randomUUID()) : directory;
+}
 
 export function extractionCliArguments(args: string[]) {
   const { values, positionals } = parseArgs({ args, allowPositionals: true, strict: true, options: {
@@ -92,7 +103,7 @@ export async function extractionCli(args = process.argv.slice(2)) {
   const db = researchDatabase(sql);
   try {
     const bundle = options.material ? await buildAbstractMaterialBundle(db, options.material) : await readAbstractMaterialBundle(db, options.bundle!);
-    const directory = path.resolve('.data/ep-pr2b', 'live-' + bundle.id);
+    const directory = await extractionOutputDirectory(process.cwd(),bundle.id,options.mode);
     await mkdir(directory, { recursive: true });
     const approval = options.approval ? JSON.parse(await readFile(privateApprovalPath(process.cwd(), options.approval), 'utf8')) as unknown : undefined;
     const parsed = liveApprovalSchema.safeParse(approval);
@@ -152,7 +163,7 @@ export async function extractionCli(args = process.argv.slice(2)) {
       }
     }
     const escape = (value: unknown) => String(typeof value === 'string' ? value : JSON.stringify(value)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
-    const rows = displayFields.map(field => `| ${escape(field.groupId + ' / ' + field.path)} | ${field.value === null ? '未知' : escape(field.value)} | ${field.evidence.map(item => escape(item.reference?.fragmentId) + '<br>' + escape(item.text ?? '引用被拒绝')).join('<br>') || '—'} | 待人工核对 | ${rawDiagnosticRows.length ? '整体结构被拒绝；仅展示原始诊断值，未自动修复。' : ''}${field.value === null ? '模型返回未知；尚未人工判断是否缺少依据' : field.evidence.some(item => item.identity !== 'valid') ? '引用身份不合法' : !field.evidence.length ? '非空值缺少模型引用' : '引用存在；语义支持尚未核查'} |`);
+    const rows = displayFields.map(field => `| ${escape(field.groupId + ' / ' + field.path)} | ${field.value === null ? ({unknown:'未知',not_reported:'提供摘要未报告',not_applicable:'不适用（引用待核查）'}[field.absenceStatus ?? 'unknown']) : escape(field.value)} | ${field.evidence.map(item => escape(item.reference?.fragmentId) + '<br>' + escape(item.text ?? '引用被拒绝')).join('<br>') || '—'} | 待人工核对 | ${rawDiagnosticRows.length ? '整体结构被拒绝；仅展示原始诊断值，未自动修复。' : ''}${field.value === null ? '缺失状态按模型原值保留；尚未人工判断' : field.evidence.some(item => item.identity !== 'valid') ? '引用身份不合法' : !field.evidence.length ? '非空值缺少模型引用' : '引用存在；语义支持尚未核查'} |`);
     const text = `# 私有实际模型提取\n\n格式：${draft.formatStatus}；引用身份：${draft.citationStatus}；语义：未核查。仍需人工判断是否支持及是否需要修改。\n\n| 字段 | 模型输出 | 原文引用 | 是否支持 | 错误或缺失原因 |\n|---|---|---|---|---|\n`
       + (rows.length ? rows.join('\n') : fieldLabels.map(label => `| ${label} | 未形成可用结构化结果 | — | 未评估 | ${escape(draft.issues.join('; '))} |`).join('\n')) + '\n';
     const metrics = { trialId: trial.id, draftId: draft.id, receiptId: draft.receiptId,
