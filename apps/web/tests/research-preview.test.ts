@@ -63,6 +63,17 @@ after(async () => {
   await new Promise<void>(resolve => api.close(() => resolve()));
 });
 
+test("research home lists VARIPULSE studies without requesting the preview API", async () => {
+  const before = previewRequests;
+  const html = await (await fetch(`${disabledOrigin}/research`)).text();
+  assert.equal(previewRequests, before);
+  assert.ok(html.includes("/research/read/cohort-41129023"));
+  assert.ok(html.includes("121 patients"));
+  assert.ok(html.includes("看入组人数"));
+  assert.ok(!html.includes("中文研究解读待生成"));
+  assert.ok(!html.includes(privateMarker));
+});
+
 test("default-off reader never requests or serializes local preview material", async () => {
   const before = previewRequests;
   const response = await fetch(`${disabledOrigin}/research`);
