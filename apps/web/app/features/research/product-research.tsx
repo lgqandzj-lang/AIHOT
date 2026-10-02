@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
-import { ArrowRightIcon, ArrowUpRightIcon, BookOpenIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, BookOpenIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
 import type { CohortStudy, ResearchPaper } from './contracts';
 
 export const PRODUCT_PATH = '/research/products/varipulse';
@@ -43,6 +43,13 @@ export function ProductEvidence({ paper }: { paper: ResearchPaper }) {
   </details>;
 }
 
+function CohortCounts({ study }: { study: CohortStudy }) {
+  if (!study.counts.length) return <p className="ep-cohort-empty">这篇摘要没有写出本篇入组人数。</p>;
+  return <ul>{study.counts.map(count => <li key={`${count.groupLabel}-${count.quantity}-${count.unit}`}>
+    <strong>{`${count.quantity} ${count.unit}`}</strong><span>{count.groupLabel}</span><p>{count.populationScope}</p><blockquote lang="en">{count.locator}</blockquote>
+  </li>)}</ul>;
+}
+
 export function CohortCountList({ studies }: { studies: CohortStudy[] }) {
   if (!studies.length) return null;
   const counted = studies.filter(study => study.counts.length > 0).length;
@@ -50,11 +57,21 @@ export function CohortCountList({ studies }: { studies: CohortStudy[] }) {
     <div className="ep-product-section-heading"><h2>摘要写明的入组人数</h2><p>{counted} 篇摘要写出了人数，其余摘要没有本篇入组整数。数字旁边是 PubMed 摘要原句。</p></div>
     <div className="ep-cohort-list">{studies.map(study => <article className="ep-cohort-study" key={study.pmid} data-cohort-pmid={study.pmid}>
       <div className="ep-cohort-meta"><span>{study.published}</span><span>{study.journal}</span><span>PMID {study.pmid}</span></div>
-      <h3><a href={study.pubmedUrl} target="_blank" rel="noopener noreferrer">{study.title.replace(/\.$/, '')}<ArrowUpRightIcon size={16} /></a></h3>
-      {study.counts.length > 0 ? <ul>{study.counts.map(count => <li key={`${count.groupLabel}-${count.quantity}-${count.unit}`}>
-        <strong>{`${count.quantity} ${count.unit}`}</strong><span>{count.groupLabel}</span><p>{count.populationScope}</p><blockquote lang="en">{count.locator}</blockquote>
-      </li>)}</ul> : <p className="ep-cohort-empty">这篇摘要没有写出本篇入组人数。</p>}
+      <h3><Link to={`/research/read/cohort-${study.pmid}`}>{study.title.replace(/\.$/, '')}</Link></h3>
+      <CohortCounts study={study} />
+      <a href={study.pubmedUrl} target="_blank" rel="noopener noreferrer">在 PubMed 打开<ArrowUpRightIcon size={16} /></a>
     </article>)}</div>
+  </section>;
+}
+
+export function CohortStudyReader({ study }: { study: CohortStudy }) {
+  return <section className="ep-reader-heading ep-container">
+    <div className="ep-reader-topline"><Link to={PRODUCT_PATH} className="ep-back-link"><ArrowLeftIcon size={17} />返回 VARIPULSE</Link></div>
+    <h1 lang="en">{study.title.replace(/\.$/, '')}</h1>
+    <p className="ep-paper-journal">{study.journal}</p>
+    <p>{study.published} · PMID {study.pmid}</p>
+    <CohortCounts study={study} />
+    <div className="ep-paper-actions"><a className="ep-button ep-button-blue" href={study.pubmedUrl} target="_blank" rel="noopener noreferrer">PubMed<ArrowUpRightIcon size={18} /></a>{study.doi && <a className="ep-button ep-button-white" href={`https://doi.org/${encodeURIComponent(study.doi)}`} target="_blank" rel="noopener noreferrer">出版社原文<ArrowUpRightIcon size={18} /></a>}</div>
   </section>;
 }
 
@@ -117,19 +134,19 @@ export function ProductResearchPage({ papers, cohortStudies = [], saveButton }: 
     </section>;
   };
   return <section className="ep-product-page ep-container">
-    <div className="ep-product-heading"><div className="ep-product-kicker">产品研究<span>私有资料</span></div><h1>VARIPULSE</h1><p className="ep-product-intro">脉冲电场消融平台 · 阅读已有文献，回到原文依据。</p><p className="ep-product-scope">中文标题与导读为助手整理。产品关联确认与临床审核独立；临床草稿尚无人类审核批准。</p>
+    <div className="ep-product-heading"><div className="ep-product-kicker">产品研究<span>{entries.length ? '私有资料' : '摘要计数'}</span></div><h1>VARIPULSE</h1><p className="ep-product-intro">脉冲电场消融平台 · 阅读已有文献，回到原文依据。</p>{entries.length > 0 && <p className="ep-product-scope">中文标题与导读为助手整理。产品关联确认与临床审核独立；临床草稿尚无人类审核批准。</p>}
       <div className="ep-product-counts"><span><b>{confirmed.length}</b> 篇已有产品关联依据</span><span><b>{candidate.length}</b> 篇候选资料</span><span>发表与收录时间分别显示</span></div></div>
     <CohortCountList studies={cohortStudies} />
     {!!interpreted.length && <section className="ep-product-interpreted" aria-label="中文研究解读"><h2>中文研究解读</h2>{interpreted.map(paper=><article key={paper.id}><div><span>已保存全文解读 · 私有模型草稿</span><h3><Link to={`/research/read/${paper.id}`} state={{productReturn:returnTo}} onClick={remember}>{paper.chineseReading!.titleZh}</Link></h3><p>{paper.chineseReading!.leadZh}</p></div><Link className="ep-quiet-link" to={`/research/read/${paper.id}`} state={{productReturn:returnTo}} onClick={remember}>阅读这篇研究<ArrowRightIcon size={17}/></Link></article>)}</section>}
     {questions.length > 0 && <div className="ep-product-questions"><h2>按研究问题阅读</h2><div role="group" aria-label="研究问题筛选"><button className={!question ? 'is-active' : ''} aria-pressed={!question} onClick={() => change('question', '')}>全部问题<span>{entries.length}</span></button>{questions.map(item => <button key={item.id} className={question === item.id ? 'is-active' : ''} aria-pressed={question === item.id} onClick={() => change('question', question === item.id ? '' : item.id)}>{item.label}<span>{entries.filter(paper => paper.privateResearch!.questions.some(question => question.id === item.id)).length}</span></button>)}</div></div>}
-    <section className="ep-product-research" aria-labelledby="ep-product-research-heading"><div className="ep-product-research-heading"><h2 id="ep-product-research-heading">研究资料</h2><Link to="/research/saved" className="ep-quiet-link">查看我的收藏<ArrowRightIcon size={16} /></Link></div>
+    {(entries.length > 0 || cohortStudies.length === 0) && <section className="ep-product-research" aria-labelledby="ep-product-research-heading"><div className="ep-product-research-heading"><h2 id="ep-product-research-heading">研究资料</h2><Link to="/research/saved" className="ep-quiet-link">查看我的收藏<ArrowRightIcon size={16} /></Link></div>
       <form className="ep-search" onSubmit={event => { event.preventDefault(); change('q', query.trim()); }}><MagnifyingGlassIcon size={22} /><input type="search" aria-label="搜索产品研究" placeholder="搜索标题、作者或 DOI…" value={query} onChange={event => setQuery(event.target.value)} />{query && <button type="button" className="ep-icon-button" aria-label="清空产品研究搜索" onClick={() => { setQuery(''); change('q', ''); }}><XIcon size={18} /></button>}<button type="submit" className="ep-search-submit">搜索<ArrowRightIcon size={17} /></button></form>
       <div className="ep-product-filters"><label>产品归属<select aria-label="产品归属筛选" value={status} onChange={event => change('status', event.target.value)}><option value="">全部资料</option>{confirmed.length > 0 && <option value="confirmed">已有品牌依据</option>}{candidate.length > 0 && <option value="candidate">归属待确认</option>}</select></label>
         {types.length > 1 && <label>研究类型<select aria-label="研究类型筛选" value={type} onChange={event => change('type', event.target.value)}><option value="">全部类型</option>{types.map(value => <option key={value}>{value}</option>)}</select></label>}
         {materialScopes.length > 1 && <label>材料范围<select aria-label="材料范围筛选" value={scope} onChange={event => change('scope', event.target.value)}><option value="">全部材料</option>{materialScopes.map(value => <option key={value} value={value}>{scopes[value]}</option>)}</select></label>}</div>
       <div className="ep-results-heading ep-product-results"><span role="status" aria-live="polite">{filtered.length} 篇资料{question && ` · ${questions.find(item => item.id === question)?.label || '所选问题'}`}{q && ` · “${q}”`}</span>{(q || question || status || type || scope) && <button className="ep-quiet-link" onClick={reset}>清除筛选<XIcon size={15} /></button>}<label>排序<select aria-label="产品研究排序" value={order} onChange={event => change('order', event.target.value)}><option value="newest">发表时间由新到旧</option><option value="title">标题 A–Z</option></select></label></div>
       {filtered.length > 0 ? <>{list('confirmed')}{list('candidate')}</> : <div className="ep-empty"><BookOpenIcon size={32} weight="light" /><h3>{entries.length ? '没有找到相符的资料。' : '当前没有可读取的产品资料。'}</h3><p>{entries.length ? '试试更短的关键词，或清除筛选查看全部资料。' : '现有资料加载后，研究问题入口与文献列表会在这里显示。'}</p>{entries.length > 0 && <button className="ep-button ep-button-white" onClick={reset}>清除筛选，查看全部<ArrowRightIcon size={17} /></button>}</div>}
-    </section>
-    <Link to="/research/work" className="ep-reading-work-link">内容整理进度<ArrowRightIcon size={15} /></Link>
+    </section>}
+    {entries.length > 0 && <Link to="/research/work" className="ep-reading-work-link">内容整理进度<ArrowRightIcon size={15} /></Link>}
   </section>;
 }

@@ -138,9 +138,20 @@ test('product reader is private-only, with no product data serialized in default
   payload = withProductRecords();
   for (const origin of [disabledOrigin, previewOrigin]) {
     const response = await fetch(`${origin}/research/products/varipulse`), html = await response.text();
-    assert.equal(response.status, 404);assert.ok(!html.includes('privateResearch'));assert.ok(!html.includes('Owned source title'));
+    assert.equal(response.status, 200);assert.ok(html.includes('data-cohort-pmid="41129023"'));assert.ok(!html.includes('privateResearch'));assert.ok(!html.includes('Owned source title'));
   }
   assert.equal((await fetch(`${privateOrigin}/research/products/varipulse`)).status, 200);
+});
+
+test('a cohort page shows the abstract sentence without requesting the preview API', async () => {
+  const before = previewRequests;
+  const response = await fetch(`${disabledOrigin}/research/read/cohort-41129023`);
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.equal(previewRequests, before);
+  assert.ok(html.includes('121 patients'));
+  assert.ok(html.includes('A total of 121 consecutive patients'));
+  assert.ok((await (await fetch(`${disabledOrigin}/research/library`)).text()).includes('/research/read/cohort-41129023'));
 });
 
 test('product list separates candidate records and reuses the latest persisted reader without duplicate research cards', async () => {

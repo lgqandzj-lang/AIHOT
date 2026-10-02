@@ -1,7 +1,26 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { CohortStudy } from './contracts.ts';
+import type { CohortStudy, ResearchPaper } from './contracts.ts';
+
+export function cohortPaperId(pmid: string): string {
+  return `cohort-${pmid}`;
+}
+
+export function cohortPaper(study: CohortStudy): ResearchPaper {
+  const year = Number(study.published.slice(0, 4));
+  return {
+    id: cohortPaperId(study.pmid),
+    title: study.title,
+    journal: study.journal,
+    year: Number.isInteger(year) && year > 1000 ? year : null,
+    authors: [],
+    doi: study.doi,
+    pmid: study.pmid,
+    topic: 'pfa',
+    sources: [{ name: 'PubMed', url: study.pubmedUrl, acquiredAt: '2026-10-02T00:00:00.000Z' }],
+  };
+}
 
 function catalogPath(): string {
   let dir = path.dirname(fileURLToPath(import.meta.url));
@@ -40,4 +59,14 @@ export function loadVaripulseCounts(): CohortStudy[] {
       locator: String(count.locator),
     })),
   }));
+}
+
+export function attachCohortStudies<T extends { papers: ResearchPaper[]; cohortStudies?: CohortStudy[] }>(experience: T): T {
+  const studies = loadVaripulseCounts();
+  const seen = new Set(experience.papers.map(paper => paper.pmid).filter((pmid): pmid is string => !!pmid));
+  return {
+    ...experience,
+    cohortStudies: studies,
+    papers: [...experience.papers, ...studies.filter(study => !seen.has(study.pmid)).map(cohortPaper)],
+  };
 }
