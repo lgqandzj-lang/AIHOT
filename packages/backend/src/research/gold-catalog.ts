@@ -102,7 +102,7 @@ function armInput(count: GoldCount, index: number): RecordInput['arms'][number] 
   return {
     key: `${index + 1}-${slug}`,
     label: count.groupLabel,
-    population: count.unit === 'trials' ? 'bench' satisfies Population : 'human',
+    population: count.unit === 'trials' ? 'bench' satisfies Population : count.unit === 'animals' ? 'animal' : 'human',
     reportedSample: { value: count.quantity, unit: storedUnit(count.unit), scope: count.populationScope },
     evidencePrivate: {
       sortIndex: index,
@@ -116,6 +116,7 @@ function armInput(count: GoldCount, index: number): RecordInput['arms'][number] 
 
 function storedUnit(unit: string): Unit {
   if (unit === 'patients') return 'patients';
+  if (unit === 'animals') return 'animals';
   if (unit === 'pulmonary veins') return 'veins';
   return 'other';
 }

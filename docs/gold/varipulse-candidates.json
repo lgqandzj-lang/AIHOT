@@ -1,9 +1,9 @@
 {
   "version": "ep-gold-set-v2",
   "productId": "varipulse",
-  "query": "VARIPULSE[Title]",
+  "query": "VARIPULSE[Title/Abstract]",
   "retrievedOn": "2026-10-02",
-  "pubmedCount": 15,
+  "pubmedCount": 65,
   "records": [
     {
       "pmid": "42739841",
@@ -363,6 +363,653 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/3736805/",
       "eligibility": "excluded",
       "exclusion": "Unrelated product: a 1986 carbon dioxide laser, not the pulsed-field catheter.",
+      "counts": []
+    },
+    {
+      "pmid": "42801040",
+      "doi": "10.1002/joa3.70474",
+      "title": "Multimodality Imaging-Guided Pulsed Field Ablation for Atrial Fibrillation in Cor Triatriatum Sinister.",
+      "journal": "Journal of arrhythmia",
+      "published": "2026 Oct",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42801040/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42639654",
+      "doi": "10.1161/circulationaha.126.081092",
+      "title": "Risk of Stroke and TIA With Pulsed Field Compared With Radiofrequency Ablation for Atrial Fibrillation.",
+      "journal": "Circulation",
+      "published": "2026 Sep 29",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42639654/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42784423",
+      "doi": "10.1111/pace.70439",
+      "title": "Esophageal Temperature Changes During Pulsed Field Ablation With Three Catheter Systems.",
+      "journal": "Pacing and clinical electrophysiology : PACE",
+      "published": "2026 Sep 24",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42784423/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42762278",
+      "doi": "10.1007/s10840-026-02441-4",
+      "title": "Left ventricular ablation for ventricular tachycardia using a variable-loop circular pulsed field ablation catheter.",
+      "journal": "Journal of interventional cardiac electrophysiology : an international journal of arrhythmias and pacing",
+      "published": "2026 Sep 19",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42762278/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42734295",
+      "doi": "10.1111/pace.70419",
+      "title": "Pulsed Field Ablation for Perimitral Atrial Flutter With Involvement of the Vein of Marshall: A Case Report.",
+      "journal": "Pacing and clinical electrophysiology : PACE",
+      "published": "2026 Sep 14",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42734295/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42618973",
+      "doi": "10.1111/pace.70396",
+      "title": "Real-World Safety of Two Pulsed Field Ablation Catheters for Atrial Fibrillation: A MAUDE Analysis.",
+      "journal": "Pacing and clinical electrophysiology : PACE",
+      "published": "2026 Aug 19",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42618973/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42555553",
+      "doi": "10.1111/jce.70474",
+      "title": "Comparative Analysis of Safety Profiles of Pulsed Field and Thermal Energy Atrial Fibrillation Ablation: Insight From the Multicenter Real-World Ablation Registry.",
+      "journal": "Journal of cardiovascular electrophysiology",
+      "published": "2026 Aug 5",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42555553/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42551689",
+      "doi": "10.1016/j.hrthm.2026.07.046",
+      "title": "Thermal profiles of pulsed field ablation catheters.",
+      "journal": "Heart rhythm",
+      "published": "2026 Aug 4",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42551689/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42666608",
+      "doi": "10.1016/j.hroo.2026.04.009",
+      "title": "Comparative analysis of hemolysis incidence across 3 different pulsed field ablation systems.",
+      "journal": "Heart rhythm O2",
+      "published": "2026 Aug",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42666608/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 26,
+          "unit": "patients",
+          "populationScope": "patients with atrial fibrillation treated with the VARIPULSE system",
+          "locator": "VARIPULSE, n = 26",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "42549340",
+      "doi": "10.1093/ehjcr/ytag542",
+      "title": "Safety of pulsed-field ablation combined with IVUS-guided pulmonary vein stenting during atrial fibrillation ablation: a case report.",
+      "journal": "European heart journal. Case reports",
+      "published": "2026 Aug",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42549340/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41950105",
+      "doi": "10.1111/pace.70244",
+      "title": "How to Use a Variable Loop Circular Catheter to Perform Zero Fluoro Pulmonary Vein Isolation With Pulsed Field Ablation.",
+      "journal": "Pacing and clinical electrophysiology : PACE",
+      "published": "2026 Aug",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41950105/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 34,
+          "unit": "patients",
+          "populationScope": "initial patients undergoing intracardiac echocardiography and ablation with the VARIPULSE variable-loop circular catheter",
+          "locator": "initial 34 patients undergoing ICE and cardiac ablation using the VLCC catheter",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "42537974",
+      "doi": "10.1016/j.hrthm.2026.07.032",
+      "title": "Real-world adverse events of pulsed field ablation for atrial fibrillation: A comprehensive analysis of the Food and Drug Administration Manufacturer and User Facility Device Experience database.",
+      "journal": "Heart rhythm",
+      "published": "2026 Jul 31",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42537974/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42496634",
+      "doi": "10.1016/j.jacep.2026.06.015",
+      "title": "Effects of Pulsed Field Ablation for Pulmonary Vein Isolation on Vein of Marshall Electrograms.",
+      "journal": "JACC. Clinical electrophysiology",
+      "published": "2026 Jul 22",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42496634/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 21,
+          "unit": "patients",
+          "populationScope": "patients undergoing pulsed field ablation pulmonary vein isolation with VARIPULSE",
+          "locator": "VARIPULSE, n = 21",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "40769447",
+      "doi": "10.1016/j.hrthm.2025.07.054",
+      "title": "Lesion area, ablation time, fluoroscopic time, and short-term outcomes among 3 pulsed field ablation systems.",
+      "journal": "Heart rhythm",
+      "published": "2026 Jul",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40769447/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 25,
+          "unit": "patients",
+          "populationScope": "patients with atrial fibrillation treated with VARIPULSE",
+          "locator": "FP (n = 25), VP (n = 25), or PS (n = 25)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "42378433",
+      "doi": "10.1111/jce.70376",
+      "title": "Clinical Utility of Tissue Proximity Indication With a Variable-Loop Circular Catheter for Pulmonary Vein Isolation.",
+      "journal": "Journal of cardiovascular electrophysiology",
+      "published": "2026 Jun 30",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42378433/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 60,
+          "unit": "patients",
+          "populationScope": "consecutive patients who underwent pulsed field ablation with the VARIPULSE variable-loop circular catheter",
+          "locator": "60 consecutive patients underwent PFA using the VLCC",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "42364048",
+      "doi": "10.1007/s10840-026-02389-5",
+      "title": "Procedural characteristics and acute outcomes with different pulsed field ablation systems for atrial fibrillation.",
+      "journal": "Journal of interventional cardiac electrophysiology : an international journal of arrhythmias and pacing",
+      "published": "2026 Jun 27",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42364048/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 50,
+          "unit": "patients",
+          "populationScope": "consecutive patients undergoing pulsed field ablation with Varipulse",
+          "locator": "50 with each system",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "42256117",
+      "doi": "10.1002/joa3.70372",
+      "title": "A Simple Maneuver to Improve Catheter Stability at the Posterior Right Pulmonary Vein in a Small Left Atrium.",
+      "journal": "Journal of arrhythmia",
+      "published": "2026 Jun",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42256117/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41964484",
+      "doi": "10.1111/jce.70343",
+      "title": "Comparison of HEMOlysis Markers Among Three Pulsed Field Ablation Systems: HEMO-PFA Study.",
+      "journal": "Journal of cardiovascular electrophysiology",
+      "published": "2026 Jun",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41964484/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 50,
+          "unit": "patients",
+          "populationScope": "consecutive atrial fibrillation patients treated with VARIPULSE",
+          "locator": "50 cases each",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "41841003",
+      "doi": "10.1111/pace.70208",
+      "title": "Hemolysis After Pulsed Field Ablation With a Variable-Loop Irrigated Circular Catheter.",
+      "journal": "Pacing and clinical electrophysiology : PACE",
+      "published": "2026 May",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41841003/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 7,
+          "unit": "patients",
+          "populationScope": "consecutive patients with paroxysmal atrial fibrillation undergoing pulsed field ablation with Varipulse",
+          "locator": "seven consecutive patients with paroxysmal atrial fibrillation",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "42059321",
+      "doi": "10.1111/pace.70273",
+      "title": "Fluoroscopy-Free Pulsed Field Ablation for Atrial Fibrillation: A Systematic Review of Procedural Feasibility and Safety.",
+      "journal": "Pacing and clinical electrophysiology : PACE",
+      "published": "2026 Apr 30",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42059321/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41575393",
+      "doi": "10.1016/j.jaccas.2025.106739",
+      "title": "Embolic Stroke After Pulsed Field Ablation for Atrial Fibrillation.",
+      "journal": "JACC. Case reports",
+      "published": "2026 Mar 4",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41575393/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41732240",
+      "doi": "10.1016/j.hroo.2025.11.018",
+      "title": "Intravascular hemolysis after pulsed field ablation for atrial fibrillation: A comparative analysis of 3 systems.",
+      "journal": "Heart rhythm O2",
+      "published": "2026 Feb",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41732240/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 30,
+          "unit": "patients",
+          "populationScope": "consecutive patients who underwent pulmonary vein isolation with VARIPULSE",
+          "locator": "VARIPULSE (VARI) (n = 30)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "41732239",
+      "doi": "10.1016/j.hroo.2025.11.014",
+      "title": "First multicenter Japanese registry on tissue proximity-guided pulsed field ablation: Procedural safety and mid-term outcomes.",
+      "journal": "Heart rhythm O2",
+      "published": "2026 Feb",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41732239/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 387,
+          "unit": "patients",
+          "populationScope": "consecutive patients with atrial fibrillation undergoing initial pulmonary vein isolation with the VARIPULSE catheter",
+          "locator": "387 consecutive patients with AF",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "41575721",
+      "doi": "10.1007/s10840-026-02236-7",
+      "title": "Real-world strategies for pulsed field ablation using a variable-loop circular catheter: a compendium of best practices from early adopters.",
+      "journal": "Journal of interventional cardiac electrophysiology : an international journal of arrhythmias and pacing",
+      "published": "2026 Jan 23",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41575721/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41361678",
+      "doi": "10.1111/jce.70218",
+      "title": "Difference in Cerebral Microembolization With Multielectrode Pentaspline or Variable-Loop Circular PFA Systems.",
+      "journal": "Journal of cardiovascular electrophysiology",
+      "published": "2026 Jan",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41361678/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 7,
+          "unit": "patients",
+          "populationScope": "patients treated with the Varipulse variable-loop circular catheter",
+          "locator": "Among 23 patients (16 Pentaspline, 7 VLCC)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "41243412",
+      "doi": "10.1111/jce.70194",
+      "title": "Evaluation of the Impact of Irrigation Flow Rate on Clinical Outcomes During Pulsed Field Ablation.",
+      "journal": "Journal of cardiovascular electrophysiology",
+      "published": "2026 Jan",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41243412/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "low irrigation",
+          "quantity": 10,
+          "unit": "patients",
+          "populationScope": "patients undergoing VARIPULSE pulsed field ablation in the low-irrigation group",
+          "locator": "2/10 patients in the l-group",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "high irrigation",
+          "quantity": 10,
+          "unit": "patients",
+          "populationScope": "patients undergoing VARIPULSE pulsed field ablation in the high-irrigation group",
+          "locator": "0/10 in the H-group",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "41088912",
+      "doi": "10.2174/011573403x401914250922111014",
+      "title": "Cavotricuspid Isthmus Line with a Variable-loop Biphasic Circular Pulsed Field Ablation Catheter Integrated with a 3-dimensional Mapping System - A Case Report.",
+      "journal": "Current cardiology reviews",
+      "published": "2026",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41088912/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "40736427",
+      "doi": "10.1016/j.hrthm.2025.06.046",
+      "title": "Real-time detection of microembolic signals using carotid echocardiography: A comparative study of 3 pulsed-field systems.",
+      "journal": "Heart rhythm",
+      "published": "2026 Jan",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40736427/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 11,
+          "unit": "patients",
+          "populationScope": "patients who underwent pulsed field ablation with VARIPULSE",
+          "locator": "VARIPULSE in 11",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "41350019",
+      "doi": "10.1016/j.jaccas.2025.105981",
+      "title": "Pulsed-Field Ablation Circular Catheter Use in Left Superior Vena Cava-Associated Atrial Arrhythmias.",
+      "journal": "JACC. Case reports",
+      "published": "2025 Dec 3",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41350019/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41328578",
+      "doi": "10.1161/circep.125.014021",
+      "title": "Pulsed Field Ablation-Related Hemolysis: Comparison Between Technologies.",
+      "journal": "Circulation. Arrhythmia and electrophysiology",
+      "published": "2025 Dec",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41328578/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41296009",
+      "doi": "10.1007/s00392-025-02806-1",
+      "title": "Incidence of cough reflex and vagal response among various pulsed field ablation systems: a multicenter registry study.",
+      "journal": "Clinical research in cardiology : official journal of the German Cardiac Society",
+      "published": "2025 Nov 26",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41296009/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41357293",
+      "doi": "10.1016/j.hroo.2025.08.030",
+      "title": "Real-world comparison of variable vs fixed-loop circular pulsed field ablation catheters: Acute outcomes including non-pulmonary vein ablation.",
+      "journal": "Heart rhythm O2",
+      "published": "2025 Nov",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41357293/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 45,
+          "unit": "patients",
+          "populationScope": "consecutive patients treated with the VARIPULSE variable-loop circular catheter",
+          "locator": "first 45 VLCC",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "41156118",
+      "doi": "10.3390/jcm14207249",
+      "title": "AI-Assisted 3D Intracardiac Echocardiography for Pulsed Field Ablation of Atrial Fibrillation Using a Novel Variable Loop Circular Catheter: A Multicenter Evaluation.",
+      "journal": "Journal of clinical medicine",
+      "published": "2025 Oct 14",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41156118/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "ICE-guided",
+          "quantity": 64,
+          "unit": "patients",
+          "populationScope": "patients in the intracardiac-echocardiography-guided VARIPULSE cohort",
+          "locator": "ICE-guided cohort (n = 64)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "non-ICE-guided",
+          "quantity": 93,
+          "unit": "patients",
+          "populationScope": "patients in the VARIPULSE cohort without intracardiac echocardiography guidance",
+          "locator": "non-ICE-guided cohort (n = 93)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "40509656",
+      "doi": "10.1111/jce.16759",
+      "title": "Incidence and Characteristics of Superior Vena Cava Impact After Pulsed-Field Ablation of the Right Pulmonary Veins.",
+      "journal": "Journal of cardiovascular electrophysiology",
+      "published": "2025 Aug",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40509656/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 17,
+          "unit": "patients",
+          "populationScope": "consecutive patients who underwent pulmonary vein isolation with Varipulse",
+          "locator": "17, Varipulse",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "39864478",
+      "doi": "10.1016/j.hrthm.2025.01.022",
+      "title": "Clinical importance of tissue proximity indication during pulsed field ablation for atrial fibrillation: Insights from initial experience.",
+      "journal": "Heart rhythm",
+      "published": "2025 Jul",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39864478/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 21,
+          "unit": "patients",
+          "populationScope": "patients in the initial VARIPULSE tissue-proximity experience",
+          "locator": "Four of 21 patients",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "40458772",
+      "doi": "10.1093/ehjcr/ytaf231",
+      "title": "Voltage threshold adjustments for a novel pulsed-field ablation catheter with integrated mapping capabilities: lessons from a case series.",
+      "journal": "European heart journal. Case reports",
+      "published": "2025 Jun",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40458772/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "40401011",
+      "doi": "10.1093/ehjcr/ytaf209",
+      "title": "Left atrial substrate modification in addition to pulmonary vein isolation using a novel circular variable loop pulsed field ablation catheter.",
+      "journal": "European heart journal. Case reports",
+      "published": "2025 May",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40401011/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "39366436",
+      "doi": "10.1016/j.hrthm.2024.09.061",
+      "title": "In vivo assessment of catheter-tissue contact using tissue proximity indication and its impact on cardiac lesion formation in pulsed field ablation.",
+      "journal": "Heart rhythm",
+      "published": "2025 Apr",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39366436/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 5,
+          "unit": "animals",
+          "populationScope": "porcine subjects receiving VARIPULSE applications",
+          "locator": "In 5 porcine subjects",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "pmid": "38583595",
+      "doi": "10.1016/j.ijcard.2024.132025",
+      "title": "Pulsed-field ablation for paroxysmal atrial fibrillation: An indirect comparison of effectiveness among three proprietary devices conducted in the absence of randomized trials.",
+      "journal": "International journal of cardiology",
+      "published": "2024 Jul 1",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/38583595/",
+      "eligibility": "study",
+      "exclusion": null,
       "counts": []
     }
   ]

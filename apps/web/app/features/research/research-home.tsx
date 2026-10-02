@@ -66,7 +66,7 @@ export function ResearchHome({ papers, cohortStudies = [], catalogSource = 'file
       <div className="ep-home-hero-main">
         <p className="ep-home-eyebrow">电生理研究 · 从进展走向依据</p>
         <h1 id="ep-home-title">看懂电生理新进展，找到产品研究依据。</h1>
-        <p className="ep-home-intro">题名点名 VARIPULSE 的研究列在下面。摘要写了人数的，打开就能看到原句。</p>
+        <p className="ep-home-intro">题名或摘要点名 VARIPULSE 的研究列在下面。摘要写了人数的，打开就能看到原句。</p>
         <nav className="ep-home-actions" aria-label="开始阅读">
           <Link className="ep-home-action is-primary" to={PRODUCT_URL}>看入组人数<ArrowRightIcon size={18} /></Link>
           <Link className="ep-home-action is-secondary" to="/research/library">查文献库<ArrowRightIcon size={18} /></Link>
