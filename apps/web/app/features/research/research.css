@@ -524,6 +524,18 @@ body:has(.ep-evidence-dialog[open]) { overflow: hidden; }
 .ep-reader-curated-lead { margin: 15px 0 7px; font-size: 18px; line-height: 1.7; color: #405b72; }
 .ep-reader-original-title { margin-top: 20px; font-size: 15px; line-height: 1.75; color: var(--ep-muted); overflow-wrap: anywhere; }
 .ep-paper-heading > .ep-product-evidence { margin-top: 16px; }
+.ep-cohort { margin: 28px 0 8px; }
+.ep-cohort-list { display: flex; flex-direction: column; gap: 14px; }
+.ep-cohort-study { background: white; border: 1px solid var(--ep-line); border-radius: 6px; padding: 18px 22px; }
+.ep-cohort-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--ep-muted); font-size: 13px; }
+.ep-cohort-study h3 { font-size: 18px; line-height: 1.45; margin: 8px 0 10px; }
+.ep-cohort-study h3 a { color: inherit; display: inline-flex; align-items: flex-start; gap: 6px; }
+.ep-cohort-study ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ep-cohort-study li strong { font-size: 18px; margin-right: 8px; }
+.ep-cohort-study li span { color: var(--ep-blue); font-size: 13px; }
+.ep-cohort-study li p { margin: 4px 0; color: var(--ep-muted); font-size: 14px; line-height: 1.6; }
+.ep-cohort-study blockquote { margin: 0; padding-left: 12px; border-left: 2px solid var(--ep-sky); color: #405b72; font-size: 14px; line-height: 1.6; }
+.ep-cohort-empty { margin: 0; color: var(--ep-muted); }
 @media (max-width: 600px) {
   .ep-paper-heading.is-private { padding-top: 18px; padding-bottom: 22px; }
   .ep-paper-heading.is-private h1 { font-size: 25px; line-height: 1.35; }

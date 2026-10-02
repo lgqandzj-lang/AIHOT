@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
 import { ArrowRightIcon, ArrowUpRightIcon, BookOpenIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
-import type { ResearchPaper } from './contracts';
+import type { CohortStudy, ResearchPaper } from './contracts';
 
 export const PRODUCT_PATH = '/research/products/varipulse';
 const POSITION_KEY = 'ep-product-reading-position-v1';
@@ -43,7 +43,22 @@ export function ProductEvidence({ paper }: { paper: ResearchPaper }) {
   </details>;
 }
 
-export function ProductResearchPage({ papers, saveButton }: { papers: ResearchPaper[]; saveButton: (paper: ResearchPaper) => ReactNode }) {
+export function CohortCountList({ studies }: { studies: CohortStudy[] }) {
+  if (!studies.length) return null;
+  const counted = studies.filter(study => study.counts.length > 0).length;
+  return <section className="ep-cohort" aria-label="摘要写明的入组人数">
+    <div className="ep-product-section-heading"><h2>摘要写明的入组人数</h2><p>{counted} 篇摘要写出了人数，其余摘要没有本篇入组整数。数字旁边是 PubMed 摘要原句。</p></div>
+    <div className="ep-cohort-list">{studies.map(study => <article className="ep-cohort-study" key={study.pmid} data-cohort-pmid={study.pmid}>
+      <div className="ep-cohort-meta"><span>{study.published}</span><span>{study.journal}</span><span>PMID {study.pmid}</span></div>
+      <h3><a href={study.pubmedUrl} target="_blank" rel="noopener noreferrer">{study.title.replace(/\.$/, '')}<ArrowUpRightIcon size={16} /></a></h3>
+      {study.counts.length > 0 ? <ul>{study.counts.map(count => <li key={`${count.groupLabel}-${count.quantity}-${count.unit}`}>
+        <strong>{`${count.quantity} ${count.unit}`}</strong><span>{count.groupLabel}</span><p>{count.populationScope}</p><blockquote lang="en">{count.locator}</blockquote>
+      </li>)}</ul> : <p className="ep-cohort-empty">这篇摘要没有写出本篇入组人数。</p>}
+    </article>)}</div>
+  </section>;
+}
+
+export function ProductResearchPage({ papers, cohortStudies = [], saveButton }: { papers: ResearchPaper[]; cohortStudies?: CohortStudy[]; saveButton: (paper: ResearchPaper) => ReactNode }) {
   const [search, setSearch] = useSearchParams();
   const pendingSearch = useRef(search);
   useEffect(() => { pendingSearch.current = search; }, [search]);
@@ -104,6 +119,7 @@ export function ProductResearchPage({ papers, saveButton }: { papers: ResearchPa
   return <section className="ep-product-page ep-container">
     <div className="ep-product-heading"><div className="ep-product-kicker">产品研究<span>私有资料</span></div><h1>VARIPULSE</h1><p className="ep-product-intro">脉冲电场消融平台 · 阅读已有文献，回到原文依据。</p><p className="ep-product-scope">中文标题与导读为助手整理。产品关联确认与临床审核独立；临床草稿尚无人类审核批准。</p>
       <div className="ep-product-counts"><span><b>{confirmed.length}</b> 篇已有产品关联依据</span><span><b>{candidate.length}</b> 篇候选资料</span><span>发表与收录时间分别显示</span></div></div>
+    <CohortCountList studies={cohortStudies} />
     {!!interpreted.length && <section className="ep-product-interpreted" aria-label="中文研究解读"><h2>中文研究解读</h2>{interpreted.map(paper=><article key={paper.id}><div><span>已保存全文解读 · 私有模型草稿</span><h3><Link to={`/research/read/${paper.id}`} state={{productReturn:returnTo}} onClick={remember}>{paper.chineseReading!.titleZh}</Link></h3><p>{paper.chineseReading!.leadZh}</p></div><Link className="ep-quiet-link" to={`/research/read/${paper.id}`} state={{productReturn:returnTo}} onClick={remember}>阅读这篇研究<ArrowRightIcon size={17}/></Link></article>)}</section>}
     {questions.length > 0 && <div className="ep-product-questions"><h2>按研究问题阅读</h2><div role="group" aria-label="研究问题筛选"><button className={!question ? 'is-active' : ''} aria-pressed={!question} onClick={() => change('question', '')}>全部问题<span>{entries.length}</span></button>{questions.map(item => <button key={item.id} className={question === item.id ? 'is-active' : ''} aria-pressed={question === item.id} onClick={() => change('question', question === item.id ? '' : item.id)}>{item.label}<span>{entries.filter(paper => paper.privateResearch!.questions.some(question => question.id === item.id)).length}</span></button>)}</div></div>}
     <section className="ep-product-research" aria-labelledby="ep-product-research-heading"><div className="ep-product-research-heading"><h2 id="ep-product-research-heading">研究资料</h2><Link to="/research/saved" className="ep-quiet-link">查看我的收藏<ArrowRightIcon size={16} /></Link></div>

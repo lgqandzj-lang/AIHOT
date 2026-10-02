@@ -4,6 +4,7 @@ import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, BookOpenIcon, Bookmark
 import type { Route } from "./+types/research";
 import type { ShouldRevalidateFunctionArgs } from 'react-router';
 import { loadResearchExperience } from "../features/research/experience.server";
+import { loadVaripulseCounts } from "../features/research/varipulse-counts.server.ts";
 import { loadReadingJobs } from '../features/research/reading-jobs.server';
 import { ReadingJobsPage, WORK_PATH } from '../features/research/reading-jobs';
 import type { ReadingExample, ReadingField, ResearchPaper } from "../features/research/contracts";
@@ -21,6 +22,7 @@ const TOPICS = [{ key: "all", label: "全部文献" }, { key: "pfa", label: "脉
 
 export async function loader({ request }: Route.LoaderArgs) {
   const experience = await loadResearchExperience(request.signal);
+  if (experience.privateProduct === "varipulse") experience.cohortStudies = loadVaripulseCounts();
   const page = new URL(request.url).pathname.replace(/\.data$/, "").slice("/research".length).replace(/^\/+|\/+$/g, "");
   const work = page === 'work' && experience.preview && experience.privateProduct === 'varipulse';
   if (work) {
@@ -224,6 +226,6 @@ export default function Research() {
   return <div className="ep-app"><a className="ep-skip-link" href="#ep-main">跳到正文</a><ResearchHeader savedCount={saved.length} privateProduct={!!experience.privateProduct} privateNews={!!experience.news} /><main id="ep-main">
     {experience.unavailable && pathname !== WORK_PATH && <div className="ep-load-error ep-container" role="status">文献暂时无法加载。<button onClick={() => location.reload()}>重新加载</button></div>}
     {pathname === NEWS_PATH && experience.newsUnavailable && <div className="ep-load-error ep-container" role="status">资讯暂时无法加载。<button onClick={() => location.reload()}>重新加载</button></div>}
-    {pathname === WORK_PATH && experience.privateProduct ? <ReadingJobsPage feed={experience.readingJobs} papers={experience.papers} unavailable={experience.readingJobsUnavailable} /> : pathname === NEWS_PATH && experience.news ? <PrivateNewsPage feed={experience.news} /> : pathname === PRODUCT_PATH && experience.privateProduct ? <ProductResearchPage papers={experience.papers} saveButton={paper => <SaveButton paper={paper} saved={saved} toggle={toggle} />} /> : home ? <ResearchHome papers={experience.papers} news={experience.news} newsUnavailable={experience.newsUnavailable} /> : readerId === "example" && experience.example ? <ReaderExample example={experience.example} /> : paper ? <PaperReader paper={paper} saved={saved} toggle={toggle} notify={setToast} /> : pathname.endsWith("/library") || pathname.endsWith("/saved") ? <Library papers={experience.papers} saved={saved} toggle={toggle} savedOnly={pathname.endsWith("/saved")} /> : <div className="ep-container ep-not-found"><EmptyState title="这篇文献暂时不可阅读。">文献可能尚未发布，返回文献库继续探索。</EmptyState></div>}
+    {pathname === WORK_PATH && experience.privateProduct ? <ReadingJobsPage feed={experience.readingJobs} papers={experience.papers} unavailable={experience.readingJobsUnavailable} /> : pathname === NEWS_PATH && experience.news ? <PrivateNewsPage feed={experience.news} /> : pathname === PRODUCT_PATH && experience.privateProduct ? <ProductResearchPage papers={experience.papers} cohortStudies={experience.cohortStudies ?? []} saveButton={paper => <SaveButton paper={paper} saved={saved} toggle={toggle} />} /> : home ? <ResearchHome papers={experience.papers} news={experience.news} newsUnavailable={experience.newsUnavailable} /> : readerId === "example" && experience.example ? <ReaderExample example={experience.example} /> : paper ? <PaperReader paper={paper} saved={saved} toggle={toggle} notify={setToast} /> : pathname.endsWith("/library") || pathname.endsWith("/saved") ? <Library papers={experience.papers} saved={saved} toggle={toggle} savedOnly={pathname.endsWith("/saved")} /> : <div className="ep-container ep-not-found"><EmptyState title="这篇文献暂时不可阅读。">文献可能尚未发布，返回文献库继续探索。</EmptyState></div>}
   </main><footer className="ep-footer ep-container"><Link to="/research" className="ep-footer-brand"><Mark /><span>电生理研究</span></Link><p>发现研究。读懂方法。回到证据。</p>{experience.preview && <span className="ep-preview-label">{experience.papers.some(paper => paper.privateDraft) ? "仅本机预览" : "本地预览 · 真实书目信息与合成阅读示例"}</span>}</footer>{toast && <div className="ep-toast" role="status"><CheckIcon size={18} />{toast}<button aria-label="关闭提示" onClick={() => setToast("")}><XIcon size={16} /></button></div>}</div>;
 }

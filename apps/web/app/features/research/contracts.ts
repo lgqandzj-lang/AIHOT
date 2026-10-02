@@ -83,9 +83,26 @@ export interface ReadingExample {
   sources: { id: string; label: string; text: string }[];
 }
 
+export interface CohortCount {
+  groupLabel: string;
+  quantity: number;
+  unit: string;
+  populationScope: string;
+  locator: string;
+}
+export interface CohortStudy {
+  pmid: string;
+  doi: string | null;
+  title: string;
+  journal: string;
+  published: string;
+  pubmedUrl: string;
+  counts: CohortCount[];
+}
 export interface ResearchExperience {
   preview: boolean;
   privateProduct?: 'varipulse';
+  cohortStudies?: CohortStudy[];
   papers: ResearchPaper[];
   example: ReadingExample | null;
   unavailable?: boolean;
