@@ -5,12 +5,8 @@ export function goldStatusText(json: string): string {
   const status = goldPhaseStatus(parseGoldSet(JSON.parse(json)));
   return [
     `eligible studies: ${status.eligibleStudies}`,
-    `attested papers: ${status.attestedPapers}`,
-    `attested count rows: ${status.attestedRows}`,
-    `proposed papers: ${status.proposedPapers}`,
-    `proposed count rows: ${status.proposedRows}`,
-    `target papers: ${status.targetPapers}`,
-    `phase 3 complete: ${status.complete}`,
+    `papers with counts: ${status.papersWithCounts}`,
+    `count rows: ${status.countRows}`,
   ].join('\n');
 }
 

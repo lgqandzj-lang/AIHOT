@@ -1,5 +1,5 @@
 {
-  "version": "ep-gold-set-v1",
+  "version": "ep-gold-set-v2",
   "productId": "varipulse",
   "query": "VARIPULSE[Title]",
   "retrievedOn": "2026-10-02",
@@ -14,8 +14,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42739841/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "42428620",
@@ -26,8 +25,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42428620/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": [
+      "counts": [
         {
           "materialScope": "abstract",
           "groupLabel": "each insertion protocol",
@@ -49,8 +47,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42360258/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "41993940",
@@ -61,8 +58,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41993940/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "41854989",
@@ -73,8 +69,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41854989/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "41129023",
@@ -85,8 +80,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41129023/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": [
+      "counts": [
         {
           "materialScope": "abstract",
           "groupLabel": "enrolled",
@@ -118,8 +112,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41972517/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": [
+      "counts": [
         {
           "materialScope": "abstract",
           "groupLabel": "enrolled",
@@ -161,8 +154,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41517277/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": [
+      "counts": [
         {
           "materialScope": "abstract",
           "groupLabel": "enrolled",
@@ -274,8 +266,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41536863/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "40412874",
@@ -286,8 +277,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40412874/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "39899143",
@@ -298,8 +288,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39899143/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": [
+      "counts": [
         {
           "materialScope": "abstract",
           "groupLabel": "enrolled",
@@ -341,8 +330,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40115621/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "39702987",
@@ -353,8 +341,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39702987/",
       "eligibility": "excluded",
       "exclusion": "Correction notice, not a study report.",
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "39004800",
@@ -365,8 +352,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39004800/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": [],
-      "proposals": []
+      "counts": []
     },
     {
       "pmid": "3736805",
@@ -377,8 +363,7 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/3736805/",
       "eligibility": "excluded",
       "exclusion": "Unrelated product: a 1986 carbon dioxide laser, not the pulsed-field catheter.",
-      "counts": [],
-      "proposals": []
+      "counts": []
     }
   ]
 }

@@ -1,23 +1,11 @@
-// Human-attested count rows are the only gold standard. Model output cannot enter this file.
+// Counts are integers copied from a PubMed abstract, with the source sentence kept beside them.
 
-export const GOLD_SET_VERSION = 'ep-gold-set-v1';
-export const GOLD_PAPER_TARGET = 20;
-const MACHINE_ATTESTOR = /\b(agent|model|assistant|codex|cursor|gpt|chatgpt|claude|deepseek|llm)\b/i;
+export const GOLD_SET_VERSION = 'ep-gold-set-v2';
 const PMID = /^[1-9][0-9]{0,11}$/;
 const DOI = /^10\.[0-9]{4,9}\/\S+$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export interface GoldCount {
-  materialScope: 'abstract' | 'cc-by-4.0-fulltext';
-  groupLabel: string;
-  quantity: number;
-  unit: string;
-  populationScope: string;
-  locator: string;
-  attestor: string;
-  attestedOn: string;
-}
-export interface GoldProposal {
   materialScope: 'abstract';
   groupLabel: string;
   quantity: number;
@@ -37,7 +25,6 @@ export interface GoldRecord {
   eligibility: 'study' | 'excluded';
   exclusion: string | null;
   counts: GoldCount[];
-  proposals: GoldProposal[];
 }
 export interface GoldSetFile {
   version: typeof GOLD_SET_VERSION;
@@ -79,19 +66,9 @@ export function parseGoldSet(value: unknown): GoldSetFile {
 
 export function goldPhaseStatus(gold: GoldSetFile) {
   const studies = gold.records.filter(record => record.eligibility === 'study');
-  const attestedPapers = studies.filter(record => record.counts.length > 0).length;
-  const attestedRows = studies.reduce((sum, record) => sum + record.counts.length, 0);
-  const proposedPapers = studies.filter(record => record.proposals.length > 0).length;
-  const proposedRows = studies.reduce((sum, record) => sum + record.proposals.length, 0);
-  return {
-    eligibleStudies: studies.length,
-    attestedPapers,
-    attestedRows,
-    proposedPapers,
-    proposedRows,
-    targetPapers: GOLD_PAPER_TARGET,
-    complete: attestedPapers >= GOLD_PAPER_TARGET,
-  };
+  const papersWithCounts = studies.filter(record => record.counts.length > 0).length;
+  const countRows = studies.reduce((sum, record) => sum + record.counts.length, 0);
+  return { eligibleStudies: studies.length, papersWithCounts, countRows };
 }
 
 export function observedCounts(output: unknown): ObservedCount[] {
@@ -114,13 +91,13 @@ export function scoreGoldCounts(gold: GoldSetFile, observed: ObservedCount[]) {
     const index = observed.findIndex((item, itemIndex) => !seen.has(itemIndex) && sameCount(row, item));
     if (index >= 0) { seen.add(index); hits += 1; }
   }
-  return { attestedRows: rows.length, hits, recall: rows.length === 0 ? null : hits / rows.length };
+  return { rows: rows.length, hits, recall: rows.length === 0 ? null : hits / rows.length };
 }
 
 function parseRecord(value: unknown, index: number, seen: Set<string>): GoldRecord {
   const path = `records[${index}]`;
   const record = object(value, path);
-  const allowed = ['pmid', 'doi', 'title', 'journal', 'published', 'pubmedUrl', 'eligibility', 'exclusion', 'counts', 'proposals'];
+  const allowed = ['pmid', 'doi', 'title', 'journal', 'published', 'pubmedUrl', 'eligibility', 'exclusion', 'counts'];
   for (const key of Object.keys(record)) if (!allowed.includes(key)) fail(`${path}.${key}`, 'unknown field');
   text(record.pmid, `${path}.pmid`, 12);
   if (!PMID.test(record.pmid as string)) fail(`${path}.pmid`, 'invalid PMID');
@@ -135,11 +112,9 @@ function parseRecord(value: unknown, index: number, seen: Set<string>): GoldReco
   if (record.pubmedUrl !== expectedUrl) fail(`${path}.pubmedUrl`, 'URL must be the PubMed record for this PMID');
   if (record.eligibility !== 'study' && record.eligibility !== 'excluded') fail(`${path}.eligibility`, 'unsupported value');
   const counts = list(record.counts, `${path}.counts`, 20).map((item, countIndex) => parseCount(item, `${path}.counts[${countIndex}]`));
-  const proposals = list(record.proposals, `${path}.proposals`, 20).map((item, proposalIndex) => parseProposal(item, `${path}.proposals[${proposalIndex}]`));
   if (record.eligibility === 'excluded') {
     text(record.exclusion, `${path}.exclusion`, 300);
-    if (counts.length > 0) fail(`${path}.counts`, 'an excluded record cannot carry gold counts');
-    if (proposals.length > 0) fail(`${path}.proposals`, 'an excluded record cannot carry proposals');
+    if (counts.length > 0) fail(`${path}.counts`, 'an excluded record cannot carry counts');
   } else if (record.exclusion !== null) fail(`${path}.exclusion`, 'a study has no exclusion reason');
   return {
     pmid: record.pmid as string,
@@ -151,58 +126,31 @@ function parseRecord(value: unknown, index: number, seen: Set<string>): GoldReco
     eligibility: record.eligibility,
     exclusion: record.eligibility === 'excluded' ? record.exclusion as string : null,
     counts,
-    proposals,
   };
 }
 
 function parseCount(value: unknown, path: string): GoldCount {
   const count = object(value, path);
-  const allowed = ['materialScope', 'groupLabel', 'quantity', 'unit', 'populationScope', 'locator', 'attestor', 'attestedOn'];
+  const allowed = ['materialScope', 'groupLabel', 'quantity', 'unit', 'populationScope', 'locator', 'source', 'retrievedOn'];
   for (const key of Object.keys(count)) if (!allowed.includes(key)) fail(`${path}.${key}`, 'unknown field');
-  if (count.materialScope !== 'abstract' && count.materialScope !== 'cc-by-4.0-fulltext') fail(`${path}.materialScope`, 'material must be an abstract or CC BY 4.0 full text');
+  if (count.materialScope !== 'abstract') fail(`${path}.materialScope`, 'a count must come from the abstract');
+  if (count.source !== 'pubmed-abstract') fail(`${path}.source`, 'unsupported count source');
   text(count.groupLabel, `${path}.groupLabel`, 200);
   if (!Number.isSafeInteger(count.quantity) || Number(count.quantity) < 0 || Number(count.quantity) > 1_000_000_000) fail(`${path}.quantity`, 'expected a nonnegative integer');
   text(count.unit, `${path}.unit`, 200);
   text(count.populationScope, `${path}.populationScope`, 500);
   text(count.locator, `${path}.locator`, 500);
   if ((count.locator as string).trim().length < 12) fail(`${path}.locator`, 'locator must point at the source phrase');
-  text(count.attestor, `${path}.attestor`, 80);
-  if (MACHINE_ATTESTOR.test(count.attestor as string)) fail(`${path}.attestor`, 'a model or agent cannot attest gold');
-  day(count.attestedOn, `${path}.attestedOn`);
+  day(count.retrievedOn, `${path}.retrievedOn`);
   return {
-    materialScope: count.materialScope,
+    materialScope: 'abstract',
     groupLabel: (count.groupLabel as string).trim(),
     quantity: count.quantity as number,
     unit: (count.unit as string).trim(),
     populationScope: (count.populationScope as string).trim(),
     locator: (count.locator as string).trim(),
-    attestor: (count.attestor as string).trim(),
-    attestedOn: count.attestedOn as string,
-  };
-}
-
-function parseProposal(value: unknown, path: string): GoldProposal {
-  const proposal = object(value, path);
-  const allowed = ['materialScope', 'groupLabel', 'quantity', 'unit', 'populationScope', 'locator', 'source', 'retrievedOn'];
-  for (const key of Object.keys(proposal)) if (!allowed.includes(key)) fail(`${path}.${key}`, 'unknown field');
-  if (proposal.materialScope !== 'abstract') fail(`${path}.materialScope`, 'a PubMed proposal must come from the abstract');
-  if (proposal.source !== 'pubmed-abstract') fail(`${path}.source`, 'unsupported proposal source');
-  text(proposal.groupLabel, `${path}.groupLabel`, 200);
-  if (!Number.isSafeInteger(proposal.quantity) || Number(proposal.quantity) < 0 || Number(proposal.quantity) > 1_000_000_000) fail(`${path}.quantity`, 'expected a nonnegative integer');
-  text(proposal.unit, `${path}.unit`, 200);
-  text(proposal.populationScope, `${path}.populationScope`, 500);
-  text(proposal.locator, `${path}.locator`, 500);
-  if ((proposal.locator as string).trim().length < 12) fail(`${path}.locator`, 'locator must point at the source phrase');
-  day(proposal.retrievedOn, `${path}.retrievedOn`);
-  return {
-    materialScope: 'abstract',
-    groupLabel: (proposal.groupLabel as string).trim(),
-    quantity: proposal.quantity as number,
-    unit: (proposal.unit as string).trim(),
-    populationScope: (proposal.populationScope as string).trim(),
-    locator: (proposal.locator as string).trim(),
     source: 'pubmed-abstract',
-    retrievedOn: proposal.retrievedOn as string,
+    retrievedOn: count.retrievedOn as string,
   };
 }
 
