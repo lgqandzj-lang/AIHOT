@@ -8,6 +8,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createRequestListener } from "@react-router/node";
 import { isApiOwned, resolveRedirect } from "@aihot/contracts/http-policy";
+import { assertPrivatePreviewConfiguration, privatePreviewRequestAllowed } from "./private-preview-policy.ts";
 
 const PORT = Number(process.env.WEB_PORT || process.env.PORT || 3000);
 const HOST = process.env.WEB_HOST || "127.0.0.1";
@@ -18,6 +19,8 @@ const API = new URL(process.env.API_BASE_URL || "http://127.0.0.1:3001");
  * limits (sign-in attempts, feedback).
  */
 const TRUST_PROXY = process.env.TRUST_PROXY === "true";
+const PRIVATE_DRAFTS = process.env.EP_RESEARCH_PRIVATE_DRAFTS_ENABLED === "true";
+if (PRIVATE_DRAFTS) assertPrivatePreviewConfiguration(HOST, API, TRUST_PROXY);
 const CLIENT_DIR = path.resolve(import.meta.dirname, "build/client");
 /** Browsers keep a page at most this long, so a withdrawal reaches them within minutes. */
 const BROWSER_MAX_SECONDS = 300;
@@ -119,6 +122,12 @@ function pageCache(req: import("node:http").IncomingMessage, res: import("node:h
 }
 
 async function handle(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) {
+  if (PRIVATE_DRAFTS && !privatePreviewRequestAllowed(req.socket.remoteAddress, req.headers.host,
+    typeof req.headers.origin === "string" ? req.headers.origin : undefined,
+    Object.keys(req.headers).some(name => name === "forwarded" || name.startsWith("x-forwarded-")) ? "present" : undefined)) {
+    res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "private, no-store" });
+    return res.end("Local preview only");
+  }
   const raw = req.url ?? "/";
   const qi = raw.indexOf("?");
   const pathname = qi >= 0 ? raw.slice(0, qi) : raw;

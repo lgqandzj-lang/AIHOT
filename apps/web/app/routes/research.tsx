@@ -2,8 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { data, Link, useLoaderData, useLocation, useSearchParams } from "react-router";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, BookOpenIcon, BookmarkSimpleIcon, CheckIcon, CopyIcon, FileTextIcon, MagnifyingGlassIcon, QuotesIcon, RowsIcon, SquaresFourIcon, XIcon } from "@phosphor-icons/react";
 import type { Route } from "./+types/research";
+import type { ShouldRevalidateFunctionArgs } from 'react-router';
 import { loadResearchExperience } from "../features/research/experience.server";
+import { loadReadingJobs } from '../features/research/reading-jobs.server';
+import { ReadingJobsPage, WORK_PATH } from '../features/research/reading-jobs';
 import type { ReadingExample, ReadingField, ResearchPaper } from "../features/research/contracts";
+import { PrivatePaperViews } from "../features/research/private-paper-reading";
+import { ChinesePaperReading } from '../features/research/chinese-paper-reading';
+import { ResearchHome } from '../features/research/research-home';
+import { PRODUCT_PATH, ProductEvidence, ProductResearchPage, safeProductReturn } from "../features/research/product-research";
+import { NEWS_PATH, PrivateNewsPage } from "../features/research/private-news";
 import "@fontsource-variable/manrope";
 import "../features/research/fonts/font.css";
 import "../features/research/research.css";
@@ -13,20 +21,29 @@ const TOPICS = [{ key: "all", label: "全部文献" }, { key: "pfa", label: "脉
 
 export async function loader({ request }: Route.LoaderArgs) {
   const experience = await loadResearchExperience(request.signal);
-  const page = new URL(request.url).pathname.slice("/research".length).replace(/^\/+|\/+$/g, "");
+  const page = new URL(request.url).pathname.replace(/\.data$/, "").slice("/research".length).replace(/^\/+|\/+$/g, "");
+  const work = page === 'work' && experience.preview && experience.privateProduct === 'varipulse';
+  if (work) {
+    try { experience.readingJobs = await loadReadingJobs(request.signal) || undefined; }
+    catch (error) { if (request.signal.aborted) throw error; experience.readingJobsUnavailable = true; }
+  }
   const readerId = page.startsWith("read/") ? page.slice(5) : null;
-  const found = ["", "library", "saved"].includes(page) || readerId === "example" && !!experience.example || experience.papers.some(paper => paper.id === readerId);
+  const found = work || ["", "library", "saved"].includes(page) || page === 'news' && !!(experience.news || experience.newsUnavailable) || page === 'products/varipulse' && experience.privateProduct === 'varipulse' || readerId === "example" && !!experience.example || experience.papers.some(paper => paper.id === readerId);
   return data(experience, { status: found ? 200 : 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" } });
 }
 
 export function headers({ loaderHeaders }: Route.HeadersArgs) { return loaderHeaders; }
+export function shouldRevalidate({ currentUrl, nextUrl, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
+  if (currentUrl.pathname === PRODUCT_PATH && nextUrl.pathname === PRODUCT_PATH) return false;
+  return defaultShouldRevalidate;
+}
 export function links() { return [{ rel: "icon", type: "image/svg+xml", href: "/research-symbol.svg" }]; }
 
 export function meta({ location, loaderData: routeData }: Route.MetaArgs) {
   const id = location.pathname.split("/read/")[1];
   const paper = routeData?.papers.find((entry) => entry.id === id);
-  const title = paper?.title || (id === "example" ? "研究要点与原文 · 电生理研究" : location.pathname.endsWith("saved") ? "我的收藏 · 电生理研究" : location.pathname.endsWith("library") ? "文献库 · 电生理研究" : "电生理研究 · 沿着证据阅读");
-  return [{ title }, { name: "description", content: "从电生理研究问题出发，发现文献、专注阅读、回到原文依据。" }, { name: "robots", content: "noindex" }];
+  const title = paper?.chineseReading?.titleZh || paper?.privateResearch?.display?.titleZh || paper?.title || (location.pathname === WORK_PATH && routeData?.privateProduct ? '内容整理进度 · 电生理研究' : location.pathname === NEWS_PATH && routeData?.news ? '最新进展 · 电生理研究' : location.pathname === PRODUCT_PATH && routeData?.privateProduct ? 'VARIPULSE 产品研究 · 电生理研究' : id === "example" ? "研究要点与原文 · 电生理研究" : location.pathname.endsWith("saved") ? "我的收藏 · 电生理研究" : location.pathname.endsWith("library") ? "文献库 · 电生理研究" : "电生理研究 · 看懂进展，找到依据");
+  return [{ title }, { name: "description", content: "看懂电生理新进展，找到产品研究依据。当前以 VARIPULSE 为试点。" }, { name: "robots", content: "noindex" }];
 }
 
 function safeExternal(value: string | null): string | undefined {
@@ -55,11 +72,11 @@ function Mark() {
   return <span className="ep-mark" aria-hidden="true"><i /><i /><i /><i /><i /></span>;
 }
 
-function ResearchHeader({ savedCount }: { savedCount: number }) {
+function ResearchHeader({ savedCount, privateProduct, privateNews }: { savedCount: number; privateProduct?: boolean; privateNews?: boolean }) {
   const { pathname } = useLocation();
-  const items = [{ to: "/research", label: "探索" }, { to: "/research/library", label: "文献库" }, { to: "/research/saved", label: "我的收藏" }];
-  return <header className="ep-header">
-    <Link to="/research" className="ep-wordmark" aria-label="电生理研究，返回探索"><Mark /><span><b>EP</b><span>电生理研究</span></span></Link>
+  const items = [{ to: "/research", label: "首页" }, ...(privateNews ? [{ to: NEWS_PATH, label: '最新进展' }] : []), ...(privateProduct ? [{ to: PRODUCT_PATH, label: '产品研究' }] : []), { to: "/research/saved", label: "收藏" }];
+  return <header className={`ep-header ${privateProduct ? 'has-product' : ''}`}>
+    <Link to="/research" className="ep-wordmark" aria-label="电生理研究，返回首页"><Mark /><span><b>EP</b><span>电生理研究</span></span></Link>
     <nav aria-label="主要导航">{items.map(({ to, label }) => <Link key={to} to={to} className={pathname === to ? "is-active" : ""} aria-current={pathname === to ? "page" : undefined}>{label}{to.endsWith("saved") && savedCount > 0 && <span className="ep-nav-count">{savedCount}</span>}</Link>)}</nav>
     <Link to="/research/library?focus=search" className="ep-icon-button ep-header-search" aria-label="查找文献"><MagnifyingGlassIcon size={21} /></Link>
   </header>;
@@ -72,12 +89,19 @@ function SaveButton({ paper, saved, toggle, full = false }: { paper: ResearchPap
   </button>;
 }
 
+function groupQuantity(group: NonNullable<ResearchPaper["privateDraft"]>["groups"][number]) {
+  if (group.quantity === null) return "数量待核对";
+  const unit = group.unit === "patients" ? "名患者" : group.unit === "animals" ? "只动物" : group.unit;
+  return `${group.quantity} ${unit || "数量单位待核对"}`;
+}
+
 function PaperList({ papers, saved, toggle, grid = false }: { papers: ResearchPaper[]; saved: string[]; toggle: (id: string) => void; grid?: boolean }) {
   return <div className={`ep-paper-list ${grid ? "is-grid" : ""}`}>{papers.map((paper) => <article className="ep-paper" key={paper.id}>
     <div className="ep-paper-year">{paper.year ?? "年份待核对"}</div>
     <div className="ep-paper-main">
-      <div className="ep-paper-meta"><span className="ep-topic-dot" />{TOPICS.find((topic) => topic.key === paper.topic)?.label}<span className="ep-meta-divider" /><span className="ep-paper-journal-short" title={paper.journal || undefined}>{paper.journal || "期刊待核对"}</span></div>
+      <div className="ep-paper-meta"><span className="ep-topic-dot" />{TOPICS.find((topic) => topic.key === paper.topic)?.label}<span className="ep-meta-divider" /><span className="ep-paper-journal-short" title={paper.journal || undefined}>{paper.journal || "期刊待核对"}</span>{paper.privateDraft && <span className="ep-demo-label">私有自动整理草稿</span>}</div>
       <h3><Link to={`/research/read/${paper.id}`} className="ep-paper-title">{paper.title.replace(/\.$/, "")}</Link></h3>
+      {!!paper.privateDraft?.groups.length && <p className="ep-draft-counts">{paper.privateDraft.groups.map(group => `${group.label} · ${groupQuantity(group)}`).join("；")}</p>}
       <div className="ep-paper-bottom"><div className="ep-paper-byline"><span>{paper.authors.slice(0, 2).join(" · ")}{paper.authors.length > 2 ? " 等" : ""}</span>{paper.pmid && <span className="ep-paper-pmid">PMID {paper.pmid}</span>}</div><Link to={`/research/read/${paper.id}`} className="ep-text-link">阅读文献<ArrowUpRightIcon size={17} /></Link></div>
     </div>
     <SaveButton paper={paper} saved={saved} toggle={toggle} />
@@ -141,11 +165,50 @@ function ReaderExample({ example }: { example: ReadingExample }) {
   </>;
 }
 
+function PrivatePaperContent({ draft }: { draft: NonNullable<ResearchPaper["privateDraft"]> }) {
+  const pending = draft.state === "invalid_output" ? "提取草稿暂不可展示，当前保留书目信息。"
+    : draft.state === "unknown" ? "提取结果尚不明确，当前保留书目信息。"
+    : draft.state === "index_only" ? "当前材料仅保留书目信息。" : "摘要草稿尚待核查，当前保留书目信息。";
+  return <div className="ep-private-reading">
+    {draft.sourceAbstract && <section className="ep-saved-abstract"><h2>原始摘要</h2>
+      <p className="ep-reading-note">材料范围：仅摘要，未提供全文。<a href={draft.sourceAbstract.sourceUrl} target="_blank" rel="noopener noreferrer">{draft.sourceAbstract.sourceName}</a> · 保存于 {draft.sourceAbstract.acquiredAt.slice(0, 10)}</p>
+      {draft.sourceAbstract.fragments.map(fragment => <div key={fragment.id}>{fragment.label && <h3>{fragment.label}</h3>}<p lang="en">{fragment.text}</p></div>)}
+    </section>}
+    <h2>{draft.readingChecks ? "自动整理 · 不完整草稿" : draft.sections?.length ? "摘要提取草稿" : draft.groups.length ? "研究对象与样本口径" : "研究内容待核对"}</h2>
+    <p className="ep-reading-note">{draft.readingChecks ? `保留已通过现有展示检查的字段清单。${draft.readingChecks.deferredCount ? `另有 ${draft.readingChecks.deferredCount} 项暂缓展示。` : ""}` : draft.sections?.length ? "待核查字段保留模型原值。" : draft.groups.length ? "数量对应下列人群或样本口径。" : pending}</p>
+    {draft.groups.map(group => <article className="ep-private-group" key={group.id}><h3>{group.label}<span>{groupQuantity(group)}</span></h3>
+      {group.subjects && <p lang="en">{group.subjects}</p>}
+      {group.populationScope && group.populationScope !== group.subjects && <p className="ep-population-scope"><span>样本口径</span><span lang="en">{group.populationScope}</span></p>}
+      <details className="ep-source-details"><summary>查看原文依据与核查方式</summary><p>字段依据来自已有 AI 对照记录。</p>
+        {group.evidence.map((source, index) => <div key={index}><span>{source.label}</span><blockquote lang="en">{source.quote}</blockquote></div>)}
+      </details></article>)}
+    {draft.sections?.length ? <>
+      {draft.sections.map(section => <article className="ep-private-group" key={section.id}><h3>{section.label}</h3>
+        {section.fields.map(field => <div className="ep-population-scope" key={field.key}><span>{field.label}</span><div><strong lang="en">{field.modelValue}</strong>
+          <p>{field.review === "pending" ? "待核查" : field.review === "not_reported" ? "提供摘要未报告 · AI 对照" : "原文支持 · AI 对照"} · {field.note}</p>
+          {!!field.evidence.length && <details className="ep-source-details"><summary>查看绑定摘要与核查依据</summary>{field.evidence.map((source, index) => <div key={index}><span>{source.label}</span><blockquote lang="en">{source.quote}</blockquote></div>)}</details>}
+        </div></div>)}
+      </article>)}</> : <p className="ep-reading-note">本页仅展示基础信息。</p>}
+    <details className="ep-source-details"><summary>来源许可与整理说明</summary>
+      <p>{draft.attribution.copyright}</p><a href={draft.attribution.licenseUrl} target="_blank" rel="noopener noreferrer">{draft.attribution.license}</a><p lang="en">{draft.attribution.changesNotice}</p>
+    </details>{draft.diagnosticUrl && <a className="ep-quiet-link" href={draft.diagnosticUrl} target="_blank" rel="noopener noreferrer">管理员诊断（需登录）<ArrowUpRightIcon size={18} /></a>}</div>;
+}
+
+function PaperBibliography({ paper }: { paper: ResearchPaper }) {
+  return <><dl><div><dt>DOI</dt><dd>{paper.doi || "未提供"}</dd></div><div><dt>PMID</dt><dd>{paper.pmid || "未提供"}</dd></div><div><dt>发表年份</dt><dd>{paper.year ?? "待核对"}</dd></div></dl><h3>书目信息来源</h3>{paper.sources.map(source => <a key={source.name} href={safeExternal(source.url)} target="_blank" rel="noopener noreferrer"><span>{source.name}<small>获取于 {source.acquiredAt.slice(0, 10)}</small></span><ArrowUpRightIcon size={18} /></a>)}</>;
+}
+
 function PaperReader({ paper, saved, toggle, notify }: { paper: ResearchPaper; saved: string[]; toggle: (id: string) => void; notify: (message: string) => void }) {
+  const location = useLocation();
+  const returnTo = safeProductReturn(location.state?.productReturn) || safeProductReturn(new URLSearchParams(location.search).get('returnTo'));
+  const reading = paper.chineseReading;
+  const titleZh = reading?.titleZh || paper.privateResearch?.display?.titleZh;
   const citation = `${paper.authors.join(", ")}. ${paper.title} ${paper.journal || ""}. ${paper.year || ""}.${paper.doi ? ` doi: ${paper.doi}` : ""}`;
   return <>
-    <section className="ep-reader-heading ep-paper-heading ep-container"><div className="ep-reader-topline"><Link to="/research/library" className="ep-back-link"><ArrowLeftIcon size={17} />返回文献库</Link><div className="ep-reader-kicker"><span className="ep-demo-label">书目信息</span><span>{paper.year ?? "年份待核对"} · {TOPICS.find(topic => topic.key === paper.topic)?.label}</span></div></div><h1 lang="en">{paper.title.replace(/\.$/, "")}</h1><p className="ep-paper-authors">{paper.authors.join(" · ") || "作者待核对"}</p><div className="ep-paper-journal">{paper.journal || "期刊待核对"}</div><div className="ep-paper-actions"><SaveButton paper={paper} saved={saved} toggle={toggle} full /><button className="ep-button ep-button-white" onClick={async () => { try { await navigator.clipboard.writeText(citation); notify("引用信息已复制"); } catch { notify("复制未成功，请从下方书目信息手动复制。"); } }}><CopyIcon size={18} />复制引用</button>{paper.doi && <a className="ep-button ep-button-blue" href={`https://doi.org/${encodeURIComponent(paper.doi)}`} target="_blank" rel="noopener noreferrer">出版社原文<ArrowUpRightIcon size={18} /></a>}</div></section>
-    <section className="ep-paper-reading ep-container"><div className="ep-paper-pending"><h2>研究内容待核对</h2><p>当前提供书目信息，研究对象、组别、方法与结论尚未核对。可通过出版社或 PubMed 阅读原文。</p>{paper.pmid && <a href={`https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(paper.pmid)}/`} className="ep-quiet-link" target="_blank" rel="noopener noreferrer">在 PubMed 中打开<ArrowUpRightIcon size={18} /></a>}</div><aside className="ep-bibliography"><h2>文献出处</h2><dl><div><dt>DOI</dt><dd>{paper.doi || "未提供"}</dd></div><div><dt>PMID</dt><dd>{paper.pmid || "未提供"}</dd></div><div><dt>发表年份</dt><dd>{paper.year ?? "待核对"}</dd></div></dl><h3>书目信息来源</h3>{paper.sources.map((source) => <a key={source.name} href={safeExternal(source.url)} target="_blank" rel="noopener noreferrer"><span>{source.name}<small>获取于 {source.acquiredAt.slice(0, 10)}</small></span><ArrowUpRightIcon size={18} /></a>)}</aside></section>
+    <section className={`ep-reader-heading ep-paper-heading ep-container ${paper.privateDraft || reading ? 'is-private' : ''}`}><div className="ep-reader-topline"><Link to={returnTo || '/research'} state={returnTo ? { restoreProductPosition: true } : undefined} preventScrollReset={!!returnTo} className="ep-back-link"><ArrowLeftIcon size={17} />{returnTo ? '返回 VARIPULSE 研究' : '返回首页'}</Link><div className="ep-reader-kicker"><span className="ep-demo-label">{reading ? '中文研究解读' : paper.privateDraft ? "研究详情" : "书目信息"}</span><span>{paper.year ?? "年份待核对"} · {TOPICS.find(topic => topic.key === paper.topic)?.label}</span></div></div><h1 lang={titleZh ? 'zh-CN' : 'en'}>{(titleZh || paper.title).replace(/\.$/, "")}</h1>{reading ? <p className="ep-reader-curated-lead">{reading.leadZh}</p> : paper.privateResearch?.display && <><p className="ep-reader-curated-lead">{paper.privateResearch.display.leadZh}</p><p className="ep-product-copy-note">中文标题与导读 · 助手整理 · 依据{paper.privateResearch.display.basisScope === 'title' ? '原题' : '摘要'}</p><p className="ep-reader-original-title" lang="en">{paper.title}</p></>}{paper.privateResearch?.product.status === 'candidate' && <p className="ep-reader-candidate">候选资料 · 产品归属尚待补证。</p>}<p className="ep-paper-authors">{paper.authors.join(" · ") || "作者待核对"}</p><div className="ep-paper-journal">{paper.journal || "期刊待核对"}</div>
+      {(paper.privateDraft || reading) && <details className="ep-bibliography ep-bibliography-inline"><summary>英文原题与文献信息{paper.doi && <span>DOI · {paper.doi}</span>}</summary>{reading && <p lang="en">{paper.title}</p>}<div className="ep-bibliography-mobile-details"><h3>作者</h3><p>{paper.authors.join(" · ") || "作者待核对"}</p><h3>期刊</h3><p>{paper.journal || "期刊待核对"}</p></div><PaperBibliography paper={paper} /></details>}
+      <div className="ep-paper-actions"><SaveButton paper={paper} saved={saved} toggle={toggle} full /><button className="ep-button ep-button-white" onClick={async () => { try { await navigator.clipboard.writeText(citation); notify("引用信息已复制"); } catch { notify("复制未成功，请从下方书目信息手动复制。"); } }}><CopyIcon size={18} />复制引用</button>{paper.doi && <a className="ep-button ep-button-blue" href={`https://doi.org/${encodeURIComponent(paper.doi)}`} target="_blank" rel="noopener noreferrer">出版社原文<ArrowUpRightIcon size={18} /></a>}</div>{paper.privateResearch?.display && <ProductEvidence paper={paper} />}</section>
+    <section className={`ep-paper-reading ep-container ${paper.privateDraft || reading ? 'is-private' : ''}`}>{reading ? <ChinesePaperReading reading={reading} hasPrivateDraft={!!paper.privateDraft} checkContent={paper.privateDraft ? <PrivatePaperContent draft={paper.privateDraft} /> : <><p lang="en">{paper.title}</p><PaperBibliography paper={paper} /></>} /> : paper.privateDraft ? <PrivatePaperViews draft={paper.privateDraft} checkContent={<PrivatePaperContent draft={paper.privateDraft} />} /> : <div className="ep-paper-pending"><h2>研究内容待核对</h2><p>当前提供书目信息，研究对象、组别、方法与结论尚未核对。可通过出版社或 PubMed 阅读原文。</p>{paper.pmid && <a href={`https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(paper.pmid)}/`} className="ep-quiet-link" target="_blank" rel="noopener noreferrer">在 PubMed 中打开<ArrowUpRightIcon size={18} /></a>}</div>}{!paper.privateDraft && !reading && <aside className="ep-bibliography"><h2>文献出处</h2><PaperBibliography paper={paper} /></aside>}</section>
   </>;
 }
 
@@ -158,8 +221,9 @@ export default function Research() {
   const readerId = pathname.split("/read/")[1];
   const paper = experience.papers.find((entry) => entry.id === readerId);
   const home = pathname === "/research" || pathname === "/research/";
-  return <div className="ep-app"><a className="ep-skip-link" href="#ep-main">跳到正文</a><ResearchHeader savedCount={saved.length} /><main id="ep-main">
-    {experience.unavailable && <div className="ep-load-error ep-container" role="status">文献暂时无法加载。<button onClick={() => location.reload()}>重新加载</button></div>}
-    {home ? <Library papers={experience.papers} saved={saved} toggle={toggle} savedOnly={false} home example={!!experience.example} /> : readerId === "example" && experience.example ? <ReaderExample example={experience.example} /> : paper ? <PaperReader paper={paper} saved={saved} toggle={toggle} notify={setToast} /> : pathname.endsWith("/library") || pathname.endsWith("/saved") ? <Library papers={experience.papers} saved={saved} toggle={toggle} savedOnly={pathname.endsWith("/saved")} /> : <div className="ep-container ep-not-found"><EmptyState title="这篇文献暂时不可阅读。">文献可能尚未发布，返回文献库继续探索。</EmptyState></div>}
-  </main><footer className="ep-footer ep-container"><Link to="/research" className="ep-footer-brand"><Mark /><span>电生理研究</span></Link><p>发现研究。读懂方法。回到证据。</p>{experience.preview && <span className="ep-preview-label">本地预览 · 真实书目信息与合成阅读示例</span>}</footer>{toast && <div className="ep-toast" role="status"><CheckIcon size={18} />{toast}<button aria-label="关闭提示" onClick={() => setToast("")}><XIcon size={16} /></button></div>}</div>;
+  return <div className="ep-app"><a className="ep-skip-link" href="#ep-main">跳到正文</a><ResearchHeader savedCount={saved.length} privateProduct={!!experience.privateProduct} privateNews={!!experience.news} /><main id="ep-main">
+    {experience.unavailable && pathname !== WORK_PATH && <div className="ep-load-error ep-container" role="status">文献暂时无法加载。<button onClick={() => location.reload()}>重新加载</button></div>}
+    {pathname === NEWS_PATH && experience.newsUnavailable && <div className="ep-load-error ep-container" role="status">资讯暂时无法加载。<button onClick={() => location.reload()}>重新加载</button></div>}
+    {pathname === WORK_PATH && experience.privateProduct ? <ReadingJobsPage feed={experience.readingJobs} papers={experience.papers} unavailable={experience.readingJobsUnavailable} /> : pathname === NEWS_PATH && experience.news ? <PrivateNewsPage feed={experience.news} /> : pathname === PRODUCT_PATH && experience.privateProduct ? <ProductResearchPage papers={experience.papers} saveButton={paper => <SaveButton paper={paper} saved={saved} toggle={toggle} />} /> : home ? <ResearchHome papers={experience.papers} news={experience.news} newsUnavailable={experience.newsUnavailable} /> : readerId === "example" && experience.example ? <ReaderExample example={experience.example} /> : paper ? <PaperReader paper={paper} saved={saved} toggle={toggle} notify={setToast} /> : pathname.endsWith("/library") || pathname.endsWith("/saved") ? <Library papers={experience.papers} saved={saved} toggle={toggle} savedOnly={pathname.endsWith("/saved")} /> : <div className="ep-container ep-not-found"><EmptyState title="这篇文献暂时不可阅读。">文献可能尚未发布，返回文献库继续探索。</EmptyState></div>}
+  </main><footer className="ep-footer ep-container"><Link to="/research" className="ep-footer-brand"><Mark /><span>电生理研究</span></Link><p>发现研究。读懂方法。回到证据。</p>{experience.preview && <span className="ep-preview-label">{experience.papers.some(paper => paper.privateDraft) ? "仅本机预览" : "本地预览 · 真实书目信息与合成阅读示例"}</span>}</footer>{toast && <div className="ep-toast" role="status"><CheckIcon size={18} />{toast}<button aria-label="关闭提示" onClick={() => setToast("")}><XIcon size={16} /></button></div>}</div>;
 }
