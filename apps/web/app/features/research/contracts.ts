@@ -8,6 +8,7 @@ export interface ResearchPaper {
   pmid: string | null;
   topic: "pfa" | "rf" | "basic";
   sources: { name: string; url: string; acquiredAt: string }[];
+  cohortLead?: string;
   privateDraft?: PrivateReadingDraft;
   privateResearch?: PrivateResearchEntry;
   chineseReading?: ChineseResearchReading;

@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { ArrowRightIcon, ArrowUpRightIcon } from '@phosphor-icons/react';
 import type { CohortStudy, PrivateNewsFeed, PrivateNewsItem, ResearchPaper } from './contracts';
+import { leadCohortCount } from './cohort-format.ts';
 import './research-home.css';
 
 type HomePaper = ResearchPaper & {
@@ -46,11 +47,6 @@ function NewsItem({ item }: { item: PrivateNewsItem }) {
   </article>;
 }
 
-function leadCount(study: CohortStudy): string {
-  const count = study.counts.find(item => item.groupLabel === 'enrolled') || study.counts[0];
-  return count ? `${count.quantity} ${count.unit}` : '摘要未写人数';
-}
-
 export function ResearchHome({ papers, cohortStudies = [], news, newsUnavailable }: {
   papers: ResearchPaper[];
   cohortStudies?: CohortStudy[];
@@ -62,6 +58,7 @@ export function ResearchHome({ papers, cohortStudies = [], news, newsUnavailable
   const recent = (news?.items || []).filter(item => !item.historical).sort(byPublishedDate).slice(0, 3);
   const history = (news?.items || []).filter(item => item.historical).sort(byPublishedDate).slice(0, 3);
   const showNews = !!news || newsUnavailable;
+  const studies = [...cohortStudies].sort((a, b) => Number(b.counts.length > 0) - Number(a.counts.length > 0));
 
   return <div className="ep-research-home ep-container">
     <section className="ep-home-hero" aria-labelledby="ep-home-title">
@@ -91,10 +88,10 @@ export function ResearchHome({ papers, cohortStudies = [], news, newsUnavailable
       </article>
     </section>}
 
-    {cohortStudies.length > 0 && <section className="ep-home-studies" aria-labelledby="ep-home-studies-title">
+    {studies.length > 0 && <section className="ep-home-studies" aria-labelledby="ep-home-studies-title">
       <div className="ep-home-list-heading"><div><span>摘要原句</span><h2 id="ep-home-studies-title">VARIPULSE 研究</h2></div><Link to={PRODUCT_URL}>查看全部人数<ArrowRightIcon size={17} /></Link></div>
-      <div className="ep-home-study-list">{cohortStudies.map(study => <article key={study.pmid}>
-        <span>{leadCount(study)}</span>
+      <div className="ep-home-study-list">{studies.map(study => <article key={study.pmid}>
+        <span>{leadCohortCount(study)}</span>
         <div><h3><Link to={`/research/read/cohort-${study.pmid}`}>{study.title.replace(/\.$/, '')}</Link></h3><p>{study.published} · {study.journal}</p></div>
       </article>)}</div>
     </section>}

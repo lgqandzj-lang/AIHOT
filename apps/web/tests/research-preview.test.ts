@@ -68,7 +68,7 @@ test("research home lists VARIPULSE studies without requesting the preview API",
   const html = await (await fetch(`${disabledOrigin}/research`)).text();
   assert.equal(previewRequests, before);
   assert.ok(html.includes("/research/read/cohort-41129023"));
-  assert.ok(html.includes("121 patients"));
+  assert.ok(html.includes("121 名患者"));
   assert.ok(html.includes("看入组人数"));
   assert.ok(!html.includes("中文研究解读待生成"));
   assert.ok(!html.includes(privateMarker));
@@ -160,9 +160,11 @@ test('a cohort page shows the abstract sentence without requesting the preview A
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.equal(previewRequests, before);
-  assert.ok(html.includes('121 patients'));
+  assert.ok(html.includes('121 名患者'));
   assert.ok(html.includes('A total of 121 consecutive patients'));
-  assert.ok((await (await fetch(`${disabledOrigin}/research/library`)).text()).includes('/research/read/cohort-41129023'));
+  const library = await (await fetch(`${disabledOrigin}/research/library`)).text();
+  assert.ok(library.includes('/research/read/cohort-41129023'));
+  assert.ok(library.includes('121 名患者'));
 });
 
 test('product list separates candidate records and reuses the latest persisted reader without duplicate research cards', async () => {
@@ -173,7 +175,7 @@ test('product list separates candidate records and reuses the latest persisted r
   assert.equal((visible.match(/data-product-membership="candidate"/g) || []).length, 1);
   assert.ok(visible.includes('/research/read/newer-reader'));assert.ok(!visible.includes('/research/read/fixture-paper'));
   assert.ok(visible.includes('发表时间'));assert.ok(visible.includes('平台收录'));assert.ok(visible.includes('产品归属缺少可核对依据'));
-  assert.ok(visible.includes('data-cohort-pmid="41129023"'));assert.ok(visible.includes('121 patients'));assert.ok(visible.includes('这篇摘要没有写出本篇入组人数'));
+  assert.ok(visible.includes('data-cohort-pmid="41129023"'));assert.ok(visible.includes('121 名患者'));assert.ok(visible.includes('这篇摘要没有写出本篇入组人数'));
   assert.ok(!visible.includes('12 名患者'));assert.ok(!html.includes(privateMarker));assert.ok(!visible.includes('recordId'));
   assert.equal(response.headers.get('x-robots-tag'), 'noindex');assert.match(response.headers.get('cache-control') || '', /private.*no-store/);
 });

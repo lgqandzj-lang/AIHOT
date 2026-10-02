@@ -102,6 +102,7 @@ function PaperList({ papers, saved, toggle, grid = false }: { papers: ResearchPa
     <div className="ep-paper-main">
       <div className="ep-paper-meta"><span className="ep-topic-dot" />{TOPICS.find((topic) => topic.key === paper.topic)?.label}<span className="ep-meta-divider" /><span className="ep-paper-journal-short" title={paper.journal || undefined}>{paper.journal || "期刊待核对"}</span>{paper.privateDraft && <span className="ep-demo-label">私有自动整理草稿</span>}</div>
       <h3><Link to={`/research/read/${paper.id}`} className="ep-paper-title">{paper.title.replace(/\.$/, "")}</Link></h3>
+      {paper.cohortLead && <p className="ep-draft-counts">{paper.cohortLead}</p>}
       {!!paper.privateDraft?.groups.length && <p className="ep-draft-counts">{paper.privateDraft.groups.map(group => `${group.label} · ${groupQuantity(group)}`).join("；")}</p>}
       <div className="ep-paper-bottom"><div className="ep-paper-byline"><span>{paper.authors.slice(0, 2).join(" · ")}{paper.authors.length > 2 ? " 等" : ""}</span>{paper.pmid && <span className="ep-paper-pmid">PMID {paper.pmid}</span>}</div><Link to={`/research/read/${paper.id}`} className="ep-text-link">阅读文献<ArrowUpRightIcon size={17} /></Link></div>
     </div>
@@ -131,7 +132,7 @@ function Library({ papers, saved, toggle, savedOnly, home = false, example = fal
     </form>
     <div className="ep-library-controls"><div className="ep-topic-tabs" aria-label="研究方向">{TOPICS.map((item) => <button key={item.key} aria-pressed={topic === item.key} className={topic === item.key ? "is-active" : ""} onClick={() => setTopic(item.key)}>{item.label}</button>)}</div></div>
     <div className="ep-results-heading"><span role="status" aria-live="polite">{filtered.length} 篇{savedOnly ? "收藏" : "文献"}{query.trim() && ` · “${query.trim()}”`}</span><label>排序<select value={order} onChange={(event) => setOrder(event.target.value)} aria-label="文献排序"><option value="newest">年份由新到旧</option><option value="title">标题 A–Z</option></select></label><div className="ep-view-toggle"><button className={grid ? "" : "is-active"} onClick={() => setGrid(false)} aria-label="列表视图" aria-pressed={!grid}><RowsIcon size={19} /></button><button className={grid ? "is-active" : ""} onClick={() => setGrid(true)} aria-label="网格视图" aria-pressed={grid}><SquaresFourIcon size={19} /></button></div></div>
-    {filtered.length ? <PaperList papers={filtered} saved={saved} toggle={toggle} grid={grid} /> : <EmptyState title={savedOnly && saved.length === 0 ? "把感兴趣的文献留在这里。" : query || topic !== "all" ? "没有找到相符的文献。" : "还没有已发布的研究。"} reset={savedOnly && saved.length === 0 ? undefined : reset}>{savedOnly && saved.length === 0 ? "在文献旁点击收藏，下次就能继续阅读。" : query || topic !== "all" ? "试试更短的关键词，或回到全部文献。" : "完成核对并发布后，文献会出现在这里。"}</EmptyState>}
+    {filtered.length ? <PaperList papers={filtered} saved={saved} toggle={toggle} grid={grid} /> : <EmptyState title={savedOnly && saved.length === 0 ? "把感兴趣的文献留在这里。" : query || topic !== "all" ? "没有找到相符的文献。" : "文献库里还没有研究。"} reset={savedOnly && saved.length === 0 ? undefined : reset}>{savedOnly && saved.length === 0 ? "在文献旁点击收藏，下次就能继续阅读。" : query || topic !== "all" ? "试试更短的关键词，或回到全部文献。" : "题名研究加载后会出现在这里。"}</EmptyState>}
   </section>;
 }
 

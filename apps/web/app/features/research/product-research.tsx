@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon, BookOpenIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
 import type { CohortStudy, ResearchPaper } from './contracts';
+import { formatCohortCount } from './cohort-format.ts';
 
 export const PRODUCT_PATH = '/research/products/varipulse';
 const POSITION_KEY = 'ep-product-reading-position-v1';
@@ -46,7 +47,7 @@ export function ProductEvidence({ paper }: { paper: ResearchPaper }) {
 function CohortCounts({ study }: { study: CohortStudy }) {
   if (!study.counts.length) return <p className="ep-cohort-empty">这篇摘要没有写出本篇入组人数。</p>;
   return <ul>{study.counts.map(count => <li key={`${count.groupLabel}-${count.quantity}-${count.unit}`}>
-    <strong>{`${count.quantity} ${count.unit}`}</strong><span>{count.groupLabel}</span><p>{count.populationScope}</p><blockquote lang="en">{count.locator}</blockquote>
+    <strong>{formatCohortCount(count.quantity, count.unit)}</strong><span>{count.groupLabel}</span><p>{count.populationScope}</p><blockquote lang="en">{count.locator}</blockquote>
   </li>)}</ul>;
 }
 

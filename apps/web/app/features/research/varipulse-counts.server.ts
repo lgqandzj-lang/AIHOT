@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CohortStudy, ResearchPaper } from './contracts.ts';
+import { leadCohortCount } from './cohort-format.ts';
 
 export function cohortPaperId(pmid: string): string {
   return `cohort-${pmid}`;
@@ -19,6 +20,7 @@ export function cohortPaper(study: CohortStudy): ResearchPaper {
     pmid: study.pmid,
     topic: 'pfa',
     sources: [{ name: 'PubMed', url: study.pubmedUrl, acquiredAt: '2026-10-02T00:00:00.000Z' }],
+    cohortLead: study.counts.length ? leadCohortCount(study) : undefined,
   };
 }
 
