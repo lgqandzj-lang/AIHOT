@@ -2,7 +2,7 @@
 
 日期：2026-10-02。名单在 `docs/gold/varipulse-candidates.json`。
 
-PubMed 检索 `VARIPULSE[Title/Abstract]` 返回 65 条。题名点名的 13 篇电生理研究仍然在内。摘要点名、但题名没有写出 VARIPULSE 的，又收了 39 篇。PMID `3736805` 是 1986 年的二氧化碳激光，PMID `39702987` 是勘误，这两条排除。没有在摘要里写出 VARIPULSE 的不收。
+PubMed 检索 `VARIPULSE[Title/Abstract]` 返回 65 条。除下面两条排除外，全部收为研究。题名或摘要正文写出 VARIPULSE 的，按原句收录。另外 11 篇的摘要正文没有这个词，PubMed 关键词写了 VARIPULSE，正文写的是可变环导管、VARIPURE 或 admIRE。PMID `3736805` 是 1986 年的二氧化碳激光，PMID `39702987` 是勘误，这两条排除。没有摘要的不写人数。
 
 计数只从 PubMed 摘要里抄写明的整数，并保留那一句原文。摘要没给本篇入组人数的，计数留空。百分比不反算。别的研究里的数字、手术时间、成功率和并发症不写入。
 

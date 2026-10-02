@@ -4,6 +4,7 @@ const UNITS: Record<string, string> = {
   patients: '名患者',
   trials: '次',
   cases: '例',
+  procedures: '次操作',
   animals: '只动物',
   'pulmonary veins': '条肺静脉',
 };

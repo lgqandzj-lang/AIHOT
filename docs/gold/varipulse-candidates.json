@@ -1011,6 +1011,224 @@
       "eligibility": "study",
       "exclusion": null,
       "counts": []
+    },
+    {
+      "pmid": "42644411",
+      "doi": "10.1093/europace/euag212",
+      "title": "Artificial intelligence-intracardiac echocardiography-guided pulsed field ablation of atrial fibrillation with variable-loop circular catheter.",
+      "journal": "Europace : European pacing, arrhythmias, and cardiac electrophysiology : journal of the working groups on cardiac pacing, arrhythmias, and cardiac cellular electrophysiology of the European Society of Cardiology",
+      "published": "2026 Sep 02",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42644411/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "VLCC during the period",
+          "quantity": 412,
+          "unit": "patients",
+          "populationScope": "patients who underwent atrial fibrillation ablation with the variable-loop circular catheter during the study period",
+          "locator": "A total of 412 patients underwent AF ablation using VLCC during the study period.",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "AIFAM without pre-map",
+          "quantity": 210,
+          "unit": "patients",
+          "populationScope": "patients analysed after AIFAM-guided ablation without a pre-map",
+          "locator": "210 patients (mean age 68.1 ± 10.2 years; 54.8% male) underwent AIFAM-guided ablation without pre-map and were analysed.",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        }
+      ]
+    },
+    {
+      "pmid": "42035937",
+      "doi": "10.1016/j.hrthm.2026.04.022",
+      "title": "Variable loop circular catheter pulsed field ablation in real-world practice: Low complication rates across patient and procedural characteristics in the REAL AF registry.",
+      "journal": "Heart rhythm",
+      "published": "2026 Sep 24",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42035937/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "index ablations",
+          "quantity": 1014,
+          "unit": "cases",
+          "populationScope": "index ablation cases performed with the variable-loop circular catheter in REAL AF",
+          "locator": "In 1014 index ablation cases",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        }
+      ]
+    },
+    {
+      "pmid": "42392466",
+      "doi": "10.1016/j.hrthm.2026.06.040",
+      "title": "Pulsed field ablation with a variable loop circular catheter in atrial fibrillation: Acute outcomes from the VARIPURE multicenter study.",
+      "journal": "Heart rhythm",
+      "published": "2026 Jul 02",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42392466/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 1022,
+          "unit": "patients",
+          "populationScope": "patients with atrial fibrillation treated with the variable-loop circular catheter in VARIPURE",
+          "locator": "Among 1022 AF patients",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        }
+      ]
+    },
+    {
+      "pmid": "41670554",
+      "doi": "10.1016/j.jacep.2026.01.025",
+      "title": "Impact of Lesion Delivery and Irrigation Rates on Neurovascular Events With PFA for Atrial Fibrillation.",
+      "journal": "JACC. Clinical electrophysiology",
+      "published": "2026 Jul 06",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41670554/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "VLCC procedures",
+          "quantity": 6811,
+          "unit": "procedures",
+          "populationScope": "variable-loop circular catheter procedures in the manufacturer complaint database, not a patient cohort",
+          "locator": "Among 6,811 VLCC procedures",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        }
+      ]
+    },
+    {
+      "pmid": "42205100",
+      "doi": "10.1111/pace.70294",
+      "title": "12-Month Clinical Outcomes Using a Variable-Loop Circular Catheter for PFA in a Chinese Atrial Fibrillation Population.",
+      "journal": "Pacing and clinical electrophysiology : PACE",
+      "published": "2026 May 28",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42205100/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 142,
+          "unit": "patients",
+          "populationScope": "patients enrolled in the afIRE variable-loop circular catheter trial",
+          "locator": "Of 142 patients enrolled",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "main-stage",
+          "quantity": 123,
+          "unit": "patients",
+          "populationScope": "main-stage patients treated with the variable-loop circular catheter after roll-in",
+          "locator": "123 (mean age 57.0 years, 45.5% female) comprised the main-stage cohort",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        }
+      ]
+    },
+    {
+      "pmid": "41357273",
+      "doi": "10.1016/j.hroo.2025.07.022",
+      "title": "Cardiac biomarker temporal dynamics after radiofrequency and pulsed field catheter ablation of atrial fibrillation.",
+      "journal": "Heart rhythm O2",
+      "published": "2025 Nov 05",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41357273/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 38,
+          "unit": "patients",
+          "populationScope": "patients treated with the variable-loop Varipulse pulsed field system",
+          "locator": "38 PFA-VAR (20.4%)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        }
+      ]
+    },
+    {
+      "pmid": "39820338",
+      "doi": "10.1093/europace/euaf007",
+      "title": "Early versus late atrial fibrillation recurrence after pulsed field ablation: insights from the admIRE trial.",
+      "journal": "Europace : European pacing, arrhythmias, and cardiac electrophysiology : journal of the working groups on cardiac pacing, arrhythmias, and cardiac cellular electrophysiology of the European Society of Cardiology",
+      "published": "2025 Feb 05",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39820338/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "included",
+          "quantity": 169,
+          "unit": "patients",
+          "populationScope": "admIRE patients with at least one blanking-period monitor transmission included in this subanalysis",
+          "locator": "were included (n = 169)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-03"
+        }
+      ]
+    },
+    {
+      "pmid": "42644576",
+      "doi": "10.1093/europace/euag226",
+      "title": "Pulsed field atrial fibrillation ablation with variable loop circular catheter: outcomes from large US registry.",
+      "journal": "Europace : European pacing, arrhythmias, and cardiac electrophysiology : journal of the working groups on cardiac pacing, arrhythmias, and cardiac cellular electrophysiology of the European Society of Cardiology",
+      "published": "2026 Sep 02",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42644576/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42141907",
+      "doi": "10.1093/europace/euag120",
+      "title": "Pre-clinical impact of higher irrigation flow rates during pulsed field ablation with a variable loop circular catheter.",
+      "journal": "Europace : European pacing, arrhythmias, and cardiac electrophysiology : journal of the working groups on cardiac pacing, arrhythmias, and cardiac cellular electrophysiology of the European Society of Cardiology",
+      "published": "2026 Jun 02",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42141907/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41968105",
+      "doi": "10.1093/europace/euag082",
+      "title": "Effectiveness of AF pulsed field ablation with a variable-loop circular catheter: 12-month VARIPURE results.",
+      "journal": "Europace : European pacing, arrhythmias, and cardiac electrophysiology : journal of the working groups on cardiac pacing, arrhythmias, and cardiac cellular electrophysiology of the European Society of Cardiology",
+      "published": "2026 Jun 02",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41968105/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41655229",
+      "doi": "10.1093/europace/euag025",
+      "title": "Workflow and sedation choice with the PFA variable-loop circular catheter in real-world AF procedures: insights from the prospective multi-centre VARIPURE clinical study.",
+      "journal": "Europace : European pacing, arrhythmias, and cardiac electrophysiology : journal of the working groups on cardiac pacing, arrhythmias, and cardiac cellular electrophysiology of the European Society of Cardiology",
+      "published": "2026 Feb 03",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41655229/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
     }
   ]
 }

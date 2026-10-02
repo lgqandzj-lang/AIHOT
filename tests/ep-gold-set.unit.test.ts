@@ -48,17 +48,20 @@ test('checked-in VARIPULSE counts come from abstract sentences', () => {
   const status = goldPhaseStatus(gold);
   assert.equal(gold.version, 'ep-gold-set-v2');
   assert.equal(gold.query, 'VARIPULSE[Title/Abstract]');
-  assert.equal(status.eligibleStudies, 52);
-  assert.equal(status.papersWithCounts, 23);
-  assert.equal(status.countRows, 39);
+  assert.equal(status.eligibleStudies, 63);
+  assert.equal(status.papersWithCounts, 30);
+  assert.equal(status.countRows, 48);
   assert.equal(gold.records.find(record => record.pmid === '41732239')?.counts[0]?.quantity, 387);
+  assert.equal(gold.records.find(record => record.pmid === '41357273')?.counts[0]?.quantity, 38);
+  assert.equal(gold.records.find(record => record.pmid === '39820338')?.counts[0]?.quantity, 169);
+  assert.equal(gold.records.find(record => record.pmid === '42644576')?.counts.length, 0);
   assert.equal(gold.records.find(record => record.pmid === '41129023')?.counts.find(row => row.quantity === 121)?.unit, 'patients');
   for (const pmid of ['42360258', '41993940', '41854989', '40115621', '42739841', '41536863', '40412874', '39004800']) {
     assert.equal(gold.records.find(record => record.pmid === pmid)?.counts.length, 0);
   }
   assert.equal(gold.records.find(record => record.pmid === '3736805')?.eligibility, 'excluded');
   assert.equal(gold.records.find(record => record.pmid === '39702987')?.eligibility, 'excluded');
-  assert.match(goldStatusText(JSON.stringify(gold)), /papers with counts: 23/);
+  assert.match(goldStatusText(JSON.stringify(gold)), /papers with counts: 30/);
 });
 
 test('a count without its abstract sentence is rejected', () => {
