@@ -12,6 +12,7 @@ import { CategoryTabs, SearchField, SearchIconLink } from "../features/feed/Filt
 import { beijingDate, beijingWeekday } from "../lib/format";
 
 export async function loader({ request }: Route.LoaderArgs) {
+  if (process.env.EP_RESEARCH_PREVIEW_ENABLED === "true") throw redirect("/research");
   const url = new URL(request.url);
   const q = url.searchParams.get("q");
   // Search lives on /all; keep the parameters so old links still land on results.

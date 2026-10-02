@@ -39,13 +39,15 @@ export async function loader({ request }: Route.LoaderArgs) {
 export const shouldRevalidate: ShouldRevalidateFunction = () => false;
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const research = pathname === "/research" || pathname.startsWith("/research/");
   return (
     <html lang={SITE.locale} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf9f6" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#13191c" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content={research ? "#f5f8fb" : "#faf9f6"} />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content={research ? "#f5f8fb" : "#13191c"} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <Meta />
         <Links />
@@ -92,7 +94,7 @@ export default function App() {
   useHydratedFlag();
   const { pathname } = useLocation();
   // The admin has its own chrome.
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) return <Outlet />;
+  if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/research" || pathname.startsWith("/research/")) return <Outlet />;
   return (
     <SiteShell changelogVersion={meta.changelogVersion}>
       <Outlet />
