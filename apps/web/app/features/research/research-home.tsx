@@ -47,9 +47,10 @@ function NewsItem({ item }: { item: PrivateNewsItem }) {
   </article>;
 }
 
-export function ResearchHome({ papers, cohortStudies = [], news, newsUnavailable }: {
+export function ResearchHome({ papers, cohortStudies = [], catalogSource = 'file', news, newsUnavailable }: {
   papers: ResearchPaper[];
   cohortStudies?: CohortStudy[];
+  catalogSource?: 'database' | 'file';
   news?: PrivateNewsFeed;
   newsUnavailable?: boolean;
 }) {
@@ -88,7 +89,7 @@ export function ResearchHome({ papers, cohortStudies = [], news, newsUnavailable
       </article>
     </section>}
 
-    {studies.length > 0 && <section className="ep-home-studies" aria-labelledby="ep-home-studies-title">
+    {studies.length > 0 && <section className="ep-home-studies" data-catalog-source={catalogSource} aria-labelledby="ep-home-studies-title">
       <div className="ep-home-list-heading"><div><span>摘要原句</span><h2 id="ep-home-studies-title">VARIPULSE 研究</h2></div><Link to={PRODUCT_URL}>查看全部人数<ArrowRightIcon size={17} /></Link></div>
       <div className="ep-home-study-list">{studies.map(study => <article key={study.pmid}>
         <span>{leadCohortCount(study)}</span>

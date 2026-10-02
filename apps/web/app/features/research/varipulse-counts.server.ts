@@ -36,7 +36,41 @@ function catalogPath(): string {
   throw new Error('VARIPULSE count file is missing');
 }
 
-export function loadVaripulseCounts(): CohortStudy[] {
+function catalogDatabaseUrl(): string | undefined {
+  if (process.env.EP_CATALOG_DATABASE_URL) return process.env.EP_CATALOG_DATABASE_URL;
+  let dir = path.dirname(fileURLToPath(import.meta.url));
+  for (let hop = 0; hop < 8; hop += 1) {
+    const envFile = path.join(dir, '.env');
+    if (existsSync(envFile)) {
+      const match = readFileSync(envFile, 'utf8').match(/^EP_CATALOG_DATABASE_URL=(\S+)/m);
+      if (match?.[1]) return match[1];
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return undefined;
+}
+
+export async function loadVaripulseCounts(): Promise<{ studies: CohortStudy[]; source: 'database' | 'file' }> {
+  const databaseUrl = catalogDatabaseUrl();
+  if (databaseUrl) return { studies: await loadVaripulseCountsFromDatabase(databaseUrl), source: 'database' };
+  return { studies: loadVaripulseCountsFromFile(), source: 'file' };
+}
+
+async function loadVaripulseCountsFromDatabase(databaseUrl: string): Promise<CohortStudy[]> {
+  const postgres = (await import('postgres')).default;
+  const { researchDatabase } = await import('../../../../../packages/backend/src/research/postgres.ts');
+  const { listImportedCatalog } = await import('../../../../../packages/backend/src/research/gold-catalog.ts');
+  const sql = postgres(databaseUrl, { max: 1, connect_timeout: 5 });
+  try {
+    return await listImportedCatalog(researchDatabase(sql));
+  } finally {
+    await sql.end({ timeout: 1 });
+  }
+}
+
+function loadVaripulseCountsFromFile(): CohortStudy[] {
   const file = JSON.parse(readFileSync(catalogPath(), 'utf8')) as {
     version?: string;
     records?: Array<{
@@ -63,12 +97,13 @@ export function loadVaripulseCounts(): CohortStudy[] {
   }));
 }
 
-export function attachCohortStudies<T extends { papers: ResearchPaper[]; cohortStudies?: CohortStudy[] }>(experience: T): T {
-  const studies = loadVaripulseCounts();
+export async function attachCohortStudies<T extends { papers: ResearchPaper[]; cohortStudies?: CohortStudy[]; catalogSource?: 'database' | 'file' }>(experience: T): Promise<T> {
+  const catalog = await loadVaripulseCounts();
   const seen = new Set(experience.papers.map(paper => paper.pmid).filter((pmid): pmid is string => !!pmid));
   return {
     ...experience,
-    cohortStudies: studies,
-    papers: [...experience.papers, ...studies.filter(study => !seen.has(study.pmid)).map(cohortPaper)],
+    catalogSource: catalog.source,
+    cohortStudies: catalog.studies,
+    papers: [...experience.papers, ...catalog.studies.filter(study => !seen.has(study.pmid)).map(cohortPaper)],
   };
 }

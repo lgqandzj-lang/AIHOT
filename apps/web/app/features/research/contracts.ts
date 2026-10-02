@@ -104,6 +104,7 @@ export interface ResearchExperience {
   preview: boolean;
   privateProduct?: 'varipulse';
   cohortStudies?: CohortStudy[];
+  catalogSource?: 'database' | 'file';
   papers: ResearchPaper[];
   example: ReadingExample | null;
   unavailable?: boolean;

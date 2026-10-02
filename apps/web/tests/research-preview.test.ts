@@ -1,6 +1,7 @@
 // Real built web server; synthetic loopback API only. Run after the web build.
 import assert from "node:assert/strict";
 import { spawn, type ChildProcess } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { once } from "node:events";
 import { createServer, request as httpRequest } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -69,6 +70,9 @@ test("research home lists VARIPULSE studies without requesting the preview API",
   assert.equal(previewRequests, before);
   assert.ok(html.includes("/research/read/cohort-41129023"));
   assert.ok(html.includes("121 名患者"));
+  const envFile = fileURLToPath(new URL("../../../.env", import.meta.url));
+  const catalogSource = process.env.EP_CATALOG_DATABASE_URL || (existsSync(envFile) && /^EP_CATALOG_DATABASE_URL=\S+/m.test(readFileSync(envFile, "utf8"))) ? "database" : "file";
+  assert.ok(html.includes(`data-catalog-source="${catalogSource}"`));
   assert.ok(html.includes("看入组人数"));
   assert.ok(!html.includes("中文研究解读待生成"));
   assert.ok(!html.includes(privateMarker));
