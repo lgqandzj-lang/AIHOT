@@ -17,6 +17,16 @@ export interface GoldCount {
   attestor: string;
   attestedOn: string;
 }
+export interface GoldProposal {
+  materialScope: 'abstract';
+  groupLabel: string;
+  quantity: number;
+  unit: string;
+  populationScope: string;
+  locator: string;
+  source: 'pubmed-abstract';
+  retrievedOn: string;
+}
 export interface GoldRecord {
   pmid: string;
   doi: string | null;
@@ -27,6 +37,7 @@ export interface GoldRecord {
   eligibility: 'study' | 'excluded';
   exclusion: string | null;
   counts: GoldCount[];
+  proposals: GoldProposal[];
 }
 export interface GoldSetFile {
   version: typeof GOLD_SET_VERSION;
@@ -70,10 +81,14 @@ export function goldPhaseStatus(gold: GoldSetFile) {
   const studies = gold.records.filter(record => record.eligibility === 'study');
   const attestedPapers = studies.filter(record => record.counts.length > 0).length;
   const attestedRows = studies.reduce((sum, record) => sum + record.counts.length, 0);
+  const proposedPapers = studies.filter(record => record.proposals.length > 0).length;
+  const proposedRows = studies.reduce((sum, record) => sum + record.proposals.length, 0);
   return {
     eligibleStudies: studies.length,
     attestedPapers,
     attestedRows,
+    proposedPapers,
+    proposedRows,
     targetPapers: GOLD_PAPER_TARGET,
     complete: attestedPapers >= GOLD_PAPER_TARGET,
   };
@@ -105,7 +120,7 @@ export function scoreGoldCounts(gold: GoldSetFile, observed: ObservedCount[]) {
 function parseRecord(value: unknown, index: number, seen: Set<string>): GoldRecord {
   const path = `records[${index}]`;
   const record = object(value, path);
-  const allowed = ['pmid', 'doi', 'title', 'journal', 'published', 'pubmedUrl', 'eligibility', 'exclusion', 'counts'];
+  const allowed = ['pmid', 'doi', 'title', 'journal', 'published', 'pubmedUrl', 'eligibility', 'exclusion', 'counts', 'proposals'];
   for (const key of Object.keys(record)) if (!allowed.includes(key)) fail(`${path}.${key}`, 'unknown field');
   text(record.pmid, `${path}.pmid`, 12);
   if (!PMID.test(record.pmid as string)) fail(`${path}.pmid`, 'invalid PMID');
@@ -120,9 +135,11 @@ function parseRecord(value: unknown, index: number, seen: Set<string>): GoldReco
   if (record.pubmedUrl !== expectedUrl) fail(`${path}.pubmedUrl`, 'URL must be the PubMed record for this PMID');
   if (record.eligibility !== 'study' && record.eligibility !== 'excluded') fail(`${path}.eligibility`, 'unsupported value');
   const counts = list(record.counts, `${path}.counts`, 20).map((item, countIndex) => parseCount(item, `${path}.counts[${countIndex}]`));
+  const proposals = list(record.proposals, `${path}.proposals`, 20).map((item, proposalIndex) => parseProposal(item, `${path}.proposals[${proposalIndex}]`));
   if (record.eligibility === 'excluded') {
     text(record.exclusion, `${path}.exclusion`, 300);
     if (counts.length > 0) fail(`${path}.counts`, 'an excluded record cannot carry gold counts');
+    if (proposals.length > 0) fail(`${path}.proposals`, 'an excluded record cannot carry proposals');
   } else if (record.exclusion !== null) fail(`${path}.exclusion`, 'a study has no exclusion reason');
   return {
     pmid: record.pmid as string,
@@ -134,6 +151,7 @@ function parseRecord(value: unknown, index: number, seen: Set<string>): GoldReco
     eligibility: record.eligibility,
     exclusion: record.eligibility === 'excluded' ? record.exclusion as string : null,
     counts,
+    proposals,
   };
 }
 
@@ -160,6 +178,31 @@ function parseCount(value: unknown, path: string): GoldCount {
     locator: (count.locator as string).trim(),
     attestor: (count.attestor as string).trim(),
     attestedOn: count.attestedOn as string,
+  };
+}
+
+function parseProposal(value: unknown, path: string): GoldProposal {
+  const proposal = object(value, path);
+  const allowed = ['materialScope', 'groupLabel', 'quantity', 'unit', 'populationScope', 'locator', 'source', 'retrievedOn'];
+  for (const key of Object.keys(proposal)) if (!allowed.includes(key)) fail(`${path}.${key}`, 'unknown field');
+  if (proposal.materialScope !== 'abstract') fail(`${path}.materialScope`, 'a PubMed proposal must come from the abstract');
+  if (proposal.source !== 'pubmed-abstract') fail(`${path}.source`, 'unsupported proposal source');
+  text(proposal.groupLabel, `${path}.groupLabel`, 200);
+  if (!Number.isSafeInteger(proposal.quantity) || Number(proposal.quantity) < 0 || Number(proposal.quantity) > 1_000_000_000) fail(`${path}.quantity`, 'expected a nonnegative integer');
+  text(proposal.unit, `${path}.unit`, 200);
+  text(proposal.populationScope, `${path}.populationScope`, 500);
+  text(proposal.locator, `${path}.locator`, 500);
+  if ((proposal.locator as string).trim().length < 12) fail(`${path}.locator`, 'locator must point at the source phrase');
+  day(proposal.retrievedOn, `${path}.retrievedOn`);
+  return {
+    materialScope: 'abstract',
+    groupLabel: (proposal.groupLabel as string).trim(),
+    quantity: proposal.quantity as number,
+    unit: (proposal.unit as string).trim(),
+    populationScope: (proposal.populationScope as string).trim(),
+    locator: (proposal.locator as string).trim(),
+    source: 'pubmed-abstract',
+    retrievedOn: proposal.retrievedOn as string,
   };
 }
 

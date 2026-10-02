@@ -29,6 +29,7 @@ function study(counts: GoldSetFile['records'][number]['counts'] = []): GoldSetFi
       eligibility: 'study',
       exclusion: null,
       counts,
+      proposals: [],
     }],
   };
 }
@@ -51,6 +52,11 @@ test('the checked-in VARIPULSE list has bibliography only and is not a completed
   assert.equal(status.attestedPapers, 0);
   assert.equal(status.attestedRows, 0);
   assert.equal(status.complete, false);
+  assert.equal(status.proposedPapers, 5);
+  assert.equal(gold.records.find(record => record.pmid === '41129023')?.proposals.find(row => row.quantity === 121)?.unit, 'patients');
+  for (const pmid of ['42360258', '41993940', '41854989', '40115621', '42739841', '41536863', '40412874', '39004800']) {
+    assert.equal(gold.records.find(record => record.pmid === pmid)?.proposals.length, 0);
+  }
   assert.equal(gold.records.find(record => record.pmid === '3736805')?.eligibility, 'excluded');
   assert.equal(gold.records.find(record => record.pmid === '39702987')?.eligibility, 'excluded');
   assert.ok(gold.records.filter(record => record.eligibility === 'study').every(record => record.counts.length === 0));
@@ -85,5 +91,13 @@ test('recall counts only attested rows and does not borrow another sample', () =
   assert.equal(score.attestedRows, 2);
   assert.equal(score.hits, 1);
   assert.equal(score.recall, 0.5);
-  assert.equal(scoreGoldCounts(parseGoldSet(study()), observed).recall, null);
+  const proposed = study();
+  proposed.records[0].proposals = [{
+    materialScope: 'abstract', groupLabel: 'treated', quantity: 35, unit: 'patients',
+    populationScope: 'consecutive patients undergoing pulmonary vein isolation',
+    locator: 'abstract methods: 35 consecutive patients', source: 'pubmed-abstract', retrievedOn: '2026-10-02',
+  }];
+  assert.equal(scoreGoldCounts(parseGoldSet(proposed), observed).recall, null);
+  assert.equal(goldPhaseStatus(parseGoldSet(proposed)).attestedPapers, 0);
+  assert.equal(goldPhaseStatus(parseGoldSet(proposed)).proposedRows, 1);
 });

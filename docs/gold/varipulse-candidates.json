@@ -14,7 +14,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42739841/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "42428620",
@@ -25,7 +26,19 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42428620/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "each insertion protocol",
+          "quantity": 10,
+          "unit": "trials",
+          "populationScope": "ex vivo VARIPULSE catheter insertion trials in one protocol",
+          "locator": "Air volume was quantified across 10 trials per group.",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
     },
     {
       "pmid": "42360258",
@@ -36,7 +49,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42360258/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "41993940",
@@ -47,7 +61,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41993940/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "41854989",
@@ -58,7 +73,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41854989/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "41129023",
@@ -69,7 +85,29 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41129023/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 121,
+          "unit": "patients",
+          "populationScope": "consecutive patients with paroxysmal or persistent atrial fibrillation included during 1 year",
+          "locator": "A total of 121 consecutive patients were included in the study during 1 year with 60% of paroxysmal AF.",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "extra-pulmonary vein ablation",
+          "quantity": 93,
+          "unit": "patients",
+          "populationScope": "enrolled patients who also received cavotricuspid isthmus and/or posterior wall isolation",
+          "locator": "Additional extra-pulmonary vein ablation (CTI or posterior wall isolation or both) was performed in 93 patients (76.9%).",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
     },
     {
       "pmid": "41972517",
@@ -80,7 +118,39 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41972517/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 50,
+          "unit": "patients",
+          "populationScope": "symptomatic atrial fibrillation undergoing first-time pulmonary vein isolation",
+          "locator": "50 patients with symptomatic atrial fibrillation (AF) undergoing first-time PVI",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Farapulse",
+          "quantity": 25,
+          "unit": "patients",
+          "populationScope": "first-time pulmonary vein isolation with the Farapulse system",
+          "locator": "Farapulse (n = 25) and Varipulse (n = 25)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "Varipulse",
+          "quantity": 25,
+          "unit": "patients",
+          "populationScope": "first-time pulmonary vein isolation with the Varipulse system",
+          "locator": "Farapulse (n = 25) and Varipulse (n = 25)",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
     },
     {
       "pmid": "41517277",
@@ -91,7 +161,109 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41517277/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 60,
+          "unit": "patients",
+          "populationScope": "patients with paroxysmal or persistent atrial fibrillation who underwent VARIPULSE catheter ablation",
+          "locator": "the study included 60 patients",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "female",
+          "quantity": 25,
+          "unit": "patients",
+          "populationScope": "female patients in the enrolled cohort",
+          "locator": "25 (41.6%) were females",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "persistent atrial fibrillation",
+          "quantity": 34,
+          "unit": "patients",
+          "populationScope": "enrolled patients with persistent atrial fibrillation",
+          "locator": "Thirty four (60%) had persistent AF",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "atrial flutter at start",
+          "quantity": 6,
+          "unit": "patients",
+          "populationScope": "enrolled patients whose initial rhythm was atrial flutter",
+          "locator": "six (10%) patients had atrial flutter as the initial rhythm",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "posterior wall isolation",
+          "quantity": 25,
+          "unit": "patients",
+          "populationScope": "enrolled patients who received posterior wall isolation",
+          "locator": "posterior wall isolation was performed in 25 (41.7%) patients",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "roof line",
+          "quantity": 9,
+          "unit": "patients",
+          "populationScope": "enrolled patients who received a roof line",
+          "locator": "roof line in 9 (15%) patients",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "anterior line",
+          "quantity": 16,
+          "unit": "patients",
+          "populationScope": "enrolled patients who received an anterior line",
+          "locator": "anterior line in 16 (26.7%) patients",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "cavotricuspid isthmus",
+          "quantity": 11,
+          "unit": "patients",
+          "populationScope": "enrolled patients who received cavotricuspid isthmus ablation",
+          "locator": "cavotricupsid isthmus in 11 (18.3%) patients",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "superior vena cava isolation",
+          "quantity": 2,
+          "unit": "patients",
+          "populationScope": "enrolled patients who received superior vena cava isolation",
+          "locator": "superior vena cava isolation in two (3.3%) patients",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "atrial flutter mapped",
+          "quantity": 27,
+          "unit": "patients",
+          "populationScope": "enrolled patients whose atrial flutter was mapped during the index procedure",
+          "locator": "27 patients had atrial flutters during the index procedure",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
     },
     {
       "pmid": "41536863",
@@ -102,7 +274,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41536863/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "40412874",
@@ -113,7 +286,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40412874/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "39899143",
@@ -124,7 +298,39 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39899143/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": [
+        {
+          "materialScope": "abstract",
+          "groupLabel": "enrolled",
+          "quantity": 35,
+          "unit": "patients",
+          "populationScope": "consecutive patients with paroxysmal or persistent atrial fibrillation undergoing pulmonary vein isolation",
+          "locator": "Thirty-five consecutive patients with paroxysmal or persistent AF underwent pulmonary vein isolation",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "near-zero fluoroscopy",
+          "quantity": 30,
+          "unit": "patients",
+          "populationScope": "enrolled patients treated with the near-zero fluoroscopy workflow",
+          "locator": "Thirty patients underwent near-zero fluoroscopy atrial fibrillation ablation",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        },
+        {
+          "materialScope": "abstract",
+          "groupLabel": "normal left ventricular function",
+          "quantity": 33,
+          "unit": "patients",
+          "populationScope": "enrolled patients with normal left ventricular systolic function, stated as greater than 60%",
+          "locator": "Thirty-three of 35 patients (94%) had a normal left ventricular systolic function",
+          "source": "pubmed-abstract",
+          "retrievedOn": "2026-10-02"
+        }
+      ]
     },
     {
       "pmid": "40115621",
@@ -135,7 +341,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40115621/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "39702987",
@@ -146,7 +353,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39702987/",
       "eligibility": "excluded",
       "exclusion": "Correction notice, not a study report.",
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "39004800",
@@ -157,7 +365,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39004800/",
       "eligibility": "study",
       "exclusion": null,
-      "counts": []
+      "counts": [],
+      "proposals": []
     },
     {
       "pmid": "3736805",
@@ -168,7 +377,8 @@
       "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/3736805/",
       "eligibility": "excluded",
       "exclusion": "Unrelated product: a 1986 carbon dioxide laser, not the pulsed-field catheter.",
-      "counts": []
+      "counts": [],
+      "proposals": []
     }
   ]
 }

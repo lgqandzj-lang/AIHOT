@@ -7,6 +7,8 @@ export function goldStatusText(json: string): string {
     `eligible studies: ${status.eligibleStudies}`,
     `attested papers: ${status.attestedPapers}`,
     `attested count rows: ${status.attestedRows}`,
+    `proposed papers: ${status.proposedPapers}`,
+    `proposed count rows: ${status.proposedRows}`,
     `target papers: ${status.targetPapers}`,
     `phase 3 complete: ${status.complete}`,
   ].join('\n');
