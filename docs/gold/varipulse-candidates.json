@@ -1,0 +1,174 @@
+{
+  "version": "ep-gold-set-v1",
+  "productId": "varipulse",
+  "query": "VARIPULSE[Title]",
+  "retrievedOn": "2026-10-02",
+  "pubmedCount": 15,
+  "records": [
+    {
+      "pmid": "42739841",
+      "doi": "10.3390/jcm15176838",
+      "title": "Fluoroless Workflow for Pulsed Field Ablation of Atrial Fibrillation Using the Sphere-9 and VARIPULSE Catheters.",
+      "journal": "Journal of clinical medicine",
+      "published": "2026 Sep 3",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42739841/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42428620",
+      "doi": "10.1253/circrep.cr-26-0102",
+      "title": "Mitigating Iatrogenic Air Entrainment During Pulsed Field Ablation: A Comparative Study of a Novel Submerged-Entry Technique Using the VARIPULSE(TM) System.",
+      "journal": "Circulation reports",
+      "published": "2026 Jul 10",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42428620/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "42360258",
+      "doi": "10.1016/j.jacep.2026.05.023",
+      "title": "Measure Twice, Ablate Once: When Discretion Proved the Better Part of Valor for Varipulse.",
+      "journal": "JACC. Clinical electrophysiology",
+      "published": "2026 Jul",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/42360258/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41993940",
+      "doi": "10.1093/ehjcr/ytag248",
+      "title": "First clinical experience with the novel Varipulse Pro platform for ablation of atrial fibrillation.",
+      "journal": "European heart journal. Case reports",
+      "published": "2026 Apr",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41993940/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41854989",
+      "doi": "10.1007/s10840-026-02292-z",
+      "title": "High-pass filtering sharpens local signal discrimination by attenuating far-field potentials in VARIPULSE Mapping.",
+      "journal": "Journal of interventional cardiac electrophysiology : an international journal of arrhythmias and pacing",
+      "published": "2026 Mar 19",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41854989/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41129023",
+      "doi": "10.1007/s10840-025-02162-0",
+      "title": "When low is not low enough: zero-fluoroscopy atrial fibrillation ablation using the VARIPULSE™ pulsed field system-a prospective single-center study.",
+      "journal": "Journal of interventional cardiac electrophysiology : an international journal of arrhythmias and pacing",
+      "published": "2026 Mar",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41129023/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41972517",
+      "doi": "10.5603/cj.106769",
+      "title": "Perioperative parameters and myocardial necrosis: a real-world comparison of Farapulse and Varipulse.",
+      "journal": "Cardiology journal",
+      "published": "2026",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41972517/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41517277",
+      "doi": "10.3390/jcm15010028",
+      "title": "Single-Center Real World Experience with the VARIPULSE Platform for Pulsed Field Ablation of Atrial Fibrillation, Atrial Flutter, and Redo Procedures.",
+      "journal": "Journal of clinical medicine",
+      "published": "2025 Dec 20",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41517277/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "41536863",
+      "doi": "10.3389/fcvm.2025.1699236",
+      "title": "First application of the varipulse™ catheter for linear ablation in atrial fibrillation: a case report.",
+      "journal": "Frontiers in cardiovascular medicine",
+      "published": "2025",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/41536863/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "40412874",
+      "doi": "10.1016/j.ccep.2025.02.013",
+      "title": "The VARIPULSE Pulsed Field Ablation Platform.",
+      "journal": "Cardiac electrophysiology clinics",
+      "published": "2025 Jun",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40412874/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "39899143",
+      "doi": "10.1007/s10840-025-01981-5",
+      "title": "Near-zero fluoroscopy workflow for pulmonary vein isolation in atrial fibrillation using a variable loop, 3D-integrated circular PFA catheter (Varipulse™): initial single-center experience with the first 35 patients.",
+      "journal": "Journal of interventional cardiac electrophysiology : an international journal of arrhythmias and pacing",
+      "published": "2025 Jun",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39899143/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "40115621",
+      "doi": "10.1093/ehjcr/ytaf107",
+      "title": "Pulsed field ablation for complex variant pulmonary vein and posterior wall isolation using the Varipulse catheter: a case report.",
+      "journal": "European heart journal. Case reports",
+      "published": "2025 Mar",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/40115621/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "39702987",
+      "doi": "10.1111/jce.16522",
+      "title": "Correction to \"Varipulse: A Step-by-Step Guide to Pulmonary Vein Isolation\".",
+      "journal": "Journal of cardiovascular electrophysiology",
+      "published": "2025 Jan",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39702987/",
+      "eligibility": "excluded",
+      "exclusion": "Correction notice, not a study report.",
+      "counts": []
+    },
+    {
+      "pmid": "39004800",
+      "doi": "10.1111/jce.16366",
+      "title": "VARIPULSE: A step-by-step guide to pulmonary vein isolation.",
+      "journal": "Journal of cardiovascular electrophysiology",
+      "published": "2024 Sep",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39004800/",
+      "eligibility": "study",
+      "exclusion": null,
+      "counts": []
+    },
+    {
+      "pmid": "3736805",
+      "doi": "10.1227/00006123-198606000-00014",
+      "title": "Incision of the brain with the Varipulse carbon dioxide laser: a preliminary study for potential application in neurosurgery.",
+      "journal": "Neurosurgery",
+      "published": "1986 Jun",
+      "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/3736805/",
+      "eligibility": "excluded",
+      "exclusion": "Unrelated product: a 1986 carbon dioxide laser, not the pulsed-field catheter.",
+      "counts": []
+    }
+  ]
+}
