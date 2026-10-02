@@ -103,6 +103,9 @@ export interface ChatJsonOptions<S extends z.ZodType> {
   retryPolicy?: "existing" | "never";
   /** Bind a preflight and monetary reservation to the final body and endpoint. */
   approvedRequest?: { bodyHash: string; baseUrl: string };
+  /** A bounded private trial rechecks its persistent reservation immediately before sending. */
+  beforeSend?: () => Promise<void>;
+  budgetSince?: string;
 }
 
 export interface ChatJsonResult<T> {
@@ -210,8 +213,10 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
         temperature: body.temperature, maxTokens: body.max_tokens, bodyHash },
       attemptTag: opts.attemptTag,
       retryPolicy: opts.retryPolicy,
+      budgetSince: opts.budgetSince,
     },
     async () => {
+      await opts.beforeSend?.();
       const started = Date.now();
       let res: Response;
       try {

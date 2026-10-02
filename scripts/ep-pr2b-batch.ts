@@ -46,7 +46,7 @@ export async function withBatchLock<T>(directory: string, action: ()=>Promise<T>
   try {await lock.writeFile(JSON.stringify({pid:process.pid,createdAt:new Date().toISOString()}));await lock.sync();return await action();}
   finally {await lock.close();await unlink(target);}
 }
-export async function saveBatchLedger(directory: string, ledger: BatchLedger) {
+export async function saveBatchLedger(directory: string, ledger: object) {
   const temporary=path.join(directory,'.batch-state-'+randomUUID()+'.tmp');
   const file=await open(temporary,'wx');
   try{await file.writeFile(JSON.stringify(ledger,null,2),'utf8');await file.sync();}finally{await file.close();}

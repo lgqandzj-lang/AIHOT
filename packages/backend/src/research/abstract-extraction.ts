@@ -37,12 +37,15 @@ async function loadInput(db: Database, bundleId: string) {
   const title = typeof material.metadata.title === 'string' ? material.metadata.title : null;
   return { bundle, ...extractionPrompt(bundle,title) };
 }
-export async function prepareExtractionRequest(db: Database, bundleId: string, modelKey: string) {
+export async function prepareExtractionRequest(db: Database, bundleId: string, modelKey: string,
+  options: { outputTokenCap?: number } = {}) {
   const input = await loadInput(db,bundleId);
+  const outputTokenCap = options.outputTokenCap ?? EXTRACTION_OUTPUT_TOKENS;
+  if (!Number.isSafeInteger(outputTokenCap) || outputTokenCap < 512 || outputTokenCap > 8192) throw new Error('Invalid per-trial extraction output cap');
   const opts = { model: modelKey, purpose: 'ep_abstract_extraction', subject: 'bundle:' + bundleId,
     promptVersion: EXTRACTION_PROMPT_VERSION, system: input.system, user: input.user,
     schema: z.unknown(), parse: parseExtractionContent,
-    temperature: 0, maxTokens: EXTRACTION_OUTPUT_TOKENS, retryPolicy: 'never' as const };
+    temperature: 0, maxTokens: outputTokenCap, retryPolicy: 'never' as const };
   const request = prepareChatJsonRequest(opts);
   const expectedMessages = [{role:'system',content:input.system},{role:'user',content:input.user}];
   if (JSON.stringify(request.body.messages) !== JSON.stringify(expectedMessages)) {
@@ -144,10 +147,10 @@ export async function extractOfflineBundle(db: Database, bundleId: string, respo
 }
 /** Single explicit round; the default does not permit any real request. */
 export async function executeExtractionTrial(db: Database, trialId: string,
-  options: { enableRealRequest?: boolean; timeoutMs?: number } = {}) {
+  options: { enableRealRequest?: boolean; timeoutMs?: number; outputTokenCap?: number } = {}) {
   if (options.enableRealRequest !== true || !config.modelCallsEnabled) throw new Error('Real extraction calls are disabled');
   const trial = await loadExtractionTrial(db,trialId);
-  const prepared = await prepareExtractionRequest(db,trial.bundle_id,trial.approval.modelKey);
+  const prepared = await prepareExtractionRequest(db,trial.bundle_id,trial.approval.modelKey,options);
   const checked = trialPreflight(prepared.bundle,prepared.request,trial.approval);
   if (!checked.ready || trial.request_hash !== prepared.request.bodyHash) throw new Error('Live extraction preflight no longer matches');
   await claimExtractionTrial(db,trialId); // Persist before network; crash/timeout cannot reset it.

@@ -1,5 +1,5 @@
 // RSS 2.0 / Atom / RDF feeds.
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 import { guardedFetch } from "../lib/http-fetch.ts";
 import { collapseWhitespace, stripTags } from "../lib/text.ts";
 import { sanitizeBody } from "../content/sanitize.ts";
@@ -114,7 +114,7 @@ export interface RssRead {
   notModified: boolean;
 }
 
-export async function fetchRss(source: SourceRow, opts: { force?: boolean } = {}): Promise<RssRead> {
+export async function fetchRss(source: SourceRow, opts: { force?: boolean; strict?: boolean } = {}): Promise<RssRead> {
   const url = String(source.config.feedUrl ?? "");
   if (!url) throw new FetchError("feedUrl missing");
   // Config changes can alter parsing/filtering even when the upstream bytes did not change.
@@ -139,6 +139,7 @@ export async function fetchRss(source: SourceRow, opts: { force?: boolean } = {}
   if (res.status !== 200) throw new FetchError(`HTTP ${res.status}`, res.status);
   let doc: Record<string, any>;
   try {
+    if (opts.strict && XMLValidator.validate(res.text()) !== true) throw new Error('Invalid XML');
     doc = parser.parse(res.text());
   } catch (e) {
     throw new FetchError(`feed parse error: ${String(e).slice(0, 200)}`);
@@ -177,6 +178,7 @@ export async function fetchRss(source: SourceRow, opts: { force?: boolean } = {}
         raw: { guid: text(it.guid) || null },
       });
     }
+    if (opts.strict && items.length && !out.length) throw new FetchError('feed entries have no usable titles or links');
     return { candidates: out, validator, notModified: false };
   }
 
@@ -203,6 +205,7 @@ export async function fetchRss(source: SourceRow, opts: { force?: boolean } = {}
         raw: { id: text(e.id) || null },
       });
     }
+    if (opts.strict && arr(feed.entry).length && !out.length) throw new FetchError('feed entries have no usable titles or links');
     return { candidates: out, validator, notModified: false };
   }
   throw new FetchError("not an RSS/Atom document");

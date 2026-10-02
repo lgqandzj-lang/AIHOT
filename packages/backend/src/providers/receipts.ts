@@ -61,6 +61,8 @@ export interface ReceiptRequest {
   /** Distinguishes an explicit re-run (e.g. admin "re-evaluate") from recovery of the same request. */
   attemptTag?: string;
   retryPolicy?: "existing" | "never";
+  /** Copied historical attempts remain intact; the private trial counts from its immutable start. */
+  budgetSince?: string;
 }
 
 export interface ReceiptResult {
@@ -85,7 +87,23 @@ interface ReceiptRow {
   retry_policy: "existing" | "never";
 }
 
-async function checkBudget(tx: Db, service: string): Promise<void> {
+async function checkBudget(tx: Db, req: ReceiptRequest): Promise<void> {
+  const service = req.service;
+  let since = req.budgetSince ?? null;
+  if (since) {
+    const [row] = await tx`SELECT value,current_database() AS database FROM settings WHERE key='ep.private_news.trial.20261002'`;
+    const trial = row?.value, reservation = trial?.requests?.find((request: { articleId: string; requestHash: string }) =>
+      request.articleId === req.subject && request.requestHash === req.requestSummary?.bodyHash);
+    if (req.service !== 'deepseek' || req.model !== 'deepseek-flash' || req.purpose !== 'ep_private_news' || req.retryPolicy !== 'never'
+      || !row?.database?.startsWith('epvoice_private_news_') || trial?.status !== 'active' || trial.startedAt !== since
+      || Date.parse(trial.endsAt) - Date.parse(since) !== 7 * 86400000 || Date.now() < Date.parse(since) || Date.now() >= Date.parse(trial.endsAt)
+      || !reservation || reservation.status !== 'reserved' || reservation.sentAt) throw new Error('Trial budget epoch has no active persistent request reservation');
+    // The authorization's day boundary stays anchored to its original start. The cumulative ledger
+    // still holds every day; yesterday's slightly later sends must not consume today's five slots.
+    const start = Date.parse(since), window = Math.floor((Date.now() - start) / 86400000);
+    if (reservation.window !== window) throw new Error('Trial reservation belongs to a different authorization day');
+    since = new Date(start + window * 86400000).toISOString();
+  }
   const [budget] = await tx<{ per_minute: number; per_hour: number; per_day: number }[]>`
     SELECT per_minute, per_hour, per_day FROM budgets WHERE service = ${service}`;
   if (!budget) return; // default rows come with the migrations; a service an operator removed is unlimited
@@ -96,7 +114,8 @@ async function checkBudget(tx: Db, service: string): Promise<void> {
       count(*) FILTER (WHERE started_at > now() - interval '1 hour') AS hour,
       count(*) AS day
     FROM receipt_attempts
-    WHERE service = ${service} AND origin = 'live' AND started_at > now() - interval '1 day'`;
+    WHERE service = ${service} AND origin = 'live' AND started_at > now() - interval '1 day'
+      AND (${since}::timestamptz IS NULL OR started_at >= ${since}::timestamptz)`;
   const c = counts!;
   if (budget.per_minute <= 0 || budget.per_hour <= 0 || budget.per_day <= 0) {
     throw new BudgetExceededError(service, "stopped", 3600);
@@ -134,13 +153,13 @@ export async function paidRequest(req: ReceiptRequest, call: () => Promise<CallO
         return { kind: "retry_forbidden" as const, row: existing };
       }
       // failed: the provider did not take the request, or its answer was unusable; a new attempt is allowed.
-      await checkBudget(tx, req.service);
+      await checkBudget(tx, req);
       const [r] = await tx<{ attempts: number }[]>`
         UPDATE receipts SET status = 'pending', attempts = attempts + 1, error = NULL, updated_at = now() WHERE id = ${existing.id} RETURNING attempts`;
       const attemptId = await startAttempt(tx, existing.id, r!.attempts, req);
       return { kind: "call" as const, id: existing.id, attemptId };
     }
-    await checkBudget(tx, req.service);
+    await checkBudget(tx, req);
     const [row] = await tx<{ id: number }[]>`
       INSERT INTO receipts (logical_key, service, model, purpose, subject, status, request, attempts, retry_policy)
       VALUES (${logicalKey}, ${req.service}, ${req.model ?? null}, ${req.purpose}, ${req.subject ?? null}, 'pending',
